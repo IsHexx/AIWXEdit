@@ -9,7 +9,7 @@ import type { App, TFile, FrontMatterCache } from 'obsidian';
 import type { ArticleMetadata, ParsedArticle, RenderOptions as ArticleRenderOptions } from '../../types/article.types';
 import { getMarkdownEngine, MarkdownEngine } from '../../infrastructure/markdown/MarkdownEngine';
 import { CodeBlockPlugin, CalloutPlugin, HeadingPlugin, LinkPlugin } from '../../infrastructure/markdown/plugins';
-import { normalizeWechatHtml } from '../../infrastructure/html/normalizeWechatHtml';
+import { normalizeWechatHtml, postProcessInlinedWechatHtml } from '../../infrastructure/html/normalizeWechatHtml';
 import { inlineCssWithPostcss } from '../../infrastructure/css/postcssInline';
 import { BASE_WECHAT_CSS } from '../../infrastructure/css/baseWechatCss';
 import { generateHljsFallbackCss } from '../../infrastructure/markdown/plugins/codeThemes';
@@ -168,7 +168,7 @@ export class ArticleTransformer {
 
         // Order matters: base -> theme -> highlight -> custom
         const cssBundle = [BASE_WECHAT_CSS, themeCSS, dynamicCSS, highlightCSS, customCSS].filter(Boolean).join('\n\n');
-        const inlinedHtmlContent = inlineCssWithPostcss(normalized, cssBundle);
+        const inlinedHtmlContent = postProcessInlinedWechatHtml(inlineCssWithPostcss(normalized, cssBundle));
 
         return {
             htmlContent: fullHtml,

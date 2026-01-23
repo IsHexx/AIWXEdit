@@ -95,7 +95,7 @@ export class PublishService {
             const client = getWechatClient(account.appId, account.appSecret);
 
             // Upload images from content
-            const { content, uploadedCount } = await this.processImages(article, client);
+            const { content, uploadedCount, firstMediaId } = await this.processImages(article, client);
 
             // Ensure cover image
             let coverMediaId = options.thumbMediaId || '';
@@ -104,12 +104,20 @@ export class PublishService {
             if (!coverMediaId && coverPath) {
                 const coverUpload = await this.uploadLocalImage(coverPath, client, article.sourceFile);
                 if (!coverUpload.success || !coverUpload.mediaId) {
-                    return {
-                        success: false,
-                        error: coverUpload.error || 'Cover upload failed',
-                    };
+                    if (firstMediaId) {
+                        coverMediaId = firstMediaId;
+                    } else {
+                        return {
+                            success: false,
+                            error: coverUpload.error || 'Cover upload failed',
+                        };
+                    }
                 }
-                coverMediaId = coverUpload.mediaId;
+                coverMediaId = coverMediaId || coverUpload.mediaId || '';
+            }
+
+            if (!coverMediaId && firstMediaId) {
+                coverMediaId = firstMediaId;
             }
 
             if (!coverMediaId && account.defaultCoverMediaId) {
@@ -119,16 +127,20 @@ export class PublishService {
             if (!coverMediaId && account.defaultCoverPath) {
                 const coverUpload = await this.uploadLocalImage(account.defaultCoverPath, client, null);
                 if (!coverUpload.success || !coverUpload.mediaId) {
-                    return {
-                        success: false,
-                        error: coverUpload.error || 'Default cover upload failed',
-                    };
+                    if (firstMediaId) {
+                        coverMediaId = firstMediaId;
+                    } else {
+                        return {
+                            success: false,
+                            error: coverUpload.error || 'Default cover upload failed',
+                        };
+                    }
                 }
-                coverMediaId = coverUpload.mediaId;
+                coverMediaId = coverMediaId || coverUpload.mediaId || '';
             }
 
             if (!coverMediaId) {
-                return { success: false, error: '未配置封面，已尝试使用默认封面但未找到。请在账号设置中配置默认封面。' };
+                return { success: false, error: '未配置封面，且未能从正文图片中获取封面。请在账号设置中配置默认封面。' };
             }
 
             // Build draft article
@@ -173,9 +185,10 @@ export class PublishService {
     private async processImages(
         article: ParsedArticle,
         client: WechatClient
-    ): Promise<{ content: string; uploadedCount: number }> {
+    ): Promise<{ content: string; uploadedCount: number; firstMediaId?: string }> {
         let content = article.styledHtmlContent;
         let uploadedCount = 0;
+        let firstMediaId: string | undefined;
 
         // Skip if no source file (cannot resolve relative paths)
         if (!article.sourceFile) {
@@ -201,11 +214,14 @@ export class PublishService {
                 if (uploadResult.success && uploadResult.url) {
                     content = content.replace(src, uploadResult.url);
                     uploadedCount++;
+                    if (!firstMediaId && uploadResult.mediaId) {
+                        firstMediaId = uploadResult.mediaId;
+                    }
                 }
             }
         }
 
-        return { content, uploadedCount };
+        return { content, uploadedCount, firstMediaId };
     }
 
     /**

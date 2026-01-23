@@ -186,8 +186,6 @@ export class CodeBlockPlugin extends BaseMarkdownPlugin {
 
         const lines = this.splitHighlightedLines(highlighted.length === 0 ? '' : highlighted);
 
-        // WeChat editor (ProseMirror) is sensitive to code block DOM structure.
-        // Rendering as leaf spans with trailingBreak helps preserve line breaks and avoids unwanted wrapping.
         let body = '';
         let liItems = '';
         for (let idx = 0; idx < lines.length; idx++) {
@@ -195,17 +193,21 @@ export class CodeBlockPlugin extends BaseMarkdownPlugin {
             if (!lineHtml || lineHtml.length === 0) {
                 lineHtml = '&nbsp;';
             }
-            // One visual line = one leaf span + a trailingBreak.
-            body += `<span leaf="">${lineHtml}</span><span leaf=""><br class="ProseMirror-trailingBreak"></span>`;
+            // v4/note-to-mp compatible: one visual line = one <code> row.
+            // This avoids WeChat treating it as a native `<pre><code>` block and stripping inline styles.
+            body += `<code>${lineHtml}</code>`;
             liItems += `<li>${idx + 1}</li>`;
         }
 
         const className = langText ? `hljs language-${langText}` : 'hljs';
-        let out = `<section class="code-section code-snippet__fix">`;
+        // Include `hljs` on the section so highlight theme background/text can apply to the whole block.
+        let out = `<section class="code-section code-snippet__fix hljs">`;
         if (this.options.lineNumbers) {
-            out += `<ul>${liItems}</ul>`;
+            // Inline reset avoids WeChat/global list margins affecting alignment.
+            out += `<ul style="margin:0; padding:0; padding-left:0; list-style:none;">${liItems}</ul>`;
         }
-        out += `<pre class="${className}"><code>${body}</code></pre></section>`;
+        // Inline reset avoids theme/pre margins (e.g. margin: 1em 0) shifting content vs line numbers.
+        out += `<pre class="${className}" style="margin:0; padding:0; overflow:auto; white-space:normal; max-width:1000% !important;">${body}</pre></section>`;
         return out;
     }
 

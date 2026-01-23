@@ -96,10 +96,12 @@ export const BASE_WECHAT_CSS = `
   box-sizing: border-box;
   max-width: 100%;
   border-radius: 0;
-  background: #fff;
-  background-color: #fff;
   margin: 0.8em 0;
-  padding: 0.875em;
+  padding: 4px 10px 4px 5px;
+  /* Fallback: if WeChat strips overflow styles on <pre>, keep the content clipped and scrollable. */
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .wx-article .code-section ul {
@@ -109,18 +111,19 @@ export const BASE_WECHAT_CSS = `
   flex-shrink: 0;
   height: 100%;
   padding: 0;
+  padding-left: 0;
+  margin: 0;
   line-height: 26px;
   font-family: inherit;
   list-style-type: none;
-  background: transparent;
-  background-color: transparent;
 }
 
 .wx-article .code-section ul > li {
   text-align: right;
   color: #8c959f;
   margin: 0;
-  padding: 0px 20px;
+  padding: 0px 10px 0px 0px;
+  min-width: 2ch;
   line-height: 26px;
   height: 26px;
   font-family: inherit;
@@ -128,28 +131,29 @@ export const BASE_WECHAT_CSS = `
 }
 
 .wx-article .code-section pre {
+  margin: 0;
   margin-block-start: 0;
   margin-block-end: 0;
   overflow: auto;
-  padding: 0 0 0 0.875em;
+  padding: 0;
   white-space: normal;
   -webkit-overflow-scrolling: touch;
   flex: 1;
   min-width: 0;
-  background: transparent;
-  background-color: transparent;
   line-height: inherit;
   font-size: inherit;
 }
 
-.wx-article .code-section pre code {
+.wx-article .code-section pre > code {
   background: transparent;
   background-color: transparent;
+  border-radius: 0;
   padding: 0;
   line-height: inherit;
   font-size: inherit;
-  display: block;
+  display: flex;
   white-space: nowrap;
+  text-wrap: nowrap;
   word-break: normal;
   overflow-wrap: normal;
   font-family: inherit;
@@ -157,7 +161,4 @@ export const BASE_WECHAT_CSS = `
   max-width: 100%;
 }
 
-.wx-article .code-section pre code span[leaf] {
-  white-space: nowrap;
-}
 `.trim();
