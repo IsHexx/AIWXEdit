@@ -412,7 +412,12 @@ export class PreviewService {
             document.body.appendChild(container);
 
             const range = document.createRange();
-            range.selectNodeContents(container);
+            const wrapper = container.firstElementChild as HTMLElement | null;
+            if (wrapper && wrapper.classList.contains('wx-article')) {
+                range.selectNode(wrapper);
+            } else {
+                range.selectNodeContents(container);
+            }
             selection.removeAllRanges();
             selection.addRange(range);
 

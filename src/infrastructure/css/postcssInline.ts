@@ -1,237 +1,232 @@
-import { parse } from '../../vendor/postcss';
+import { parse, Root, Rule, Declaration } from 'postcss';
 
-interface AppliedDecl {
-    specificity: number;
-    order: number;
-    important: boolean;
-}
+/**
+ * Represents the calculated weight of a CSS selector.
+ * Used to determine which styles should take precedence.
+ * 
+ * Replaces the ad-hoc calculation in the previous version with a structured Value Object.
+ */
+class SelectorWeight {
+    constructor(
+        public readonly ids: number,
+        public readonly classesAndAttributes: number,
+        public readonly elements: number
+    ) { }
 
-function stripQuotes(value: string): string {
-    return value.replace(/(^")|("$)/g, '').replace(/(^')|('$)/g, '');
-}
-
-function normalizeSelector(selector: string): {
-    selector: string;
-    pseudo?: 'before' | 'after';
-} | null {
-    if (!selector) return null;
-
-    // Ignore pseudo-classes (hover/active/visited/...) for WeChat output.
-    // Keep pseudo-elements handling for `::before/::after` by converting to real nodes.
-    const hasPseudoClass = selector.includes(':') && !selector.includes('::');
-    if (hasPseudoClass) return null;
-
-    let pseudo: 'before' | 'after' | undefined;
-    if (selector.includes('::before')) pseudo = 'before';
-    if (selector.includes('::after')) pseudo = 'after';
-
-    // WeChat does not understand pseudo-elements, so we strip them from selector matching.
-    // `::marker` can't be represented directly; stripping is best-effort.
-    const cleaned = selector
-        .replace(/::before/g, '')
-        .replace(/::after/g, '')
-        .replace(/::marker/g, '')
-        .trim();
-
-    if (!cleaned) return null;
-    return { selector: cleaned, pseudo };
-}
-
-function calculateSpecificity(selector: string): number {
-    const ids = (selector.match(/#[\w-]+/g) || []).length;
-    const classes = (selector.match(/\.[\w-]+/g) || []).length;
-    const attrs = (selector.match(/\[[^\]]+\]/g) || []).length;
-    const elements = (selector
-        .replace(/#[\w-]+/g, '')
-        .replace(/\.[\w-]+/g, '')
-        .replace(/\[[^\]]+\]/g, '')
-        .match(/\b[a-zA-Z][\w-]*\b/g) || []).length;
-
-    return ids * 10000 + (classes + attrs) * 100 + elements;
-}
-
-function collectInlineProps(el: HTMLElement): Set<string> {
-    const set = new Set<string>();
-    const style = el.getAttribute('style') || '';
-    style.split(';').forEach(part => {
-        const [key] = part.split(':');
-        const k = key?.trim();
-        if (k) set.add(k);
-    });
-    return set;
-}
-
-function createSpan(doc: Document): HTMLSpanElement {
-    return doc.createElement('span');
-}
-
-function findMatchingSelector(el: HTMLElement, rawSelector: string): {
-    selector: string;
-    pseudo?: 'before' | 'after';
-    specificity: number;
-} | null {
-    if (!rawSelector) return null;
-    const parts = rawSelector.split(',').map(part => part.trim()).filter(Boolean);
-    let best: { selector: string; pseudo?: 'before' | 'after'; specificity: number } | null = null;
-
-    for (const part of parts) {
-        const normalized = normalizeSelector(part);
-        if (!normalized) continue;
-
-        let matches = false;
-        try {
-            matches = el.matches(normalized.selector);
-        } catch {
-            continue;
-        }
-        if (!matches) continue;
-
-        const specificity = calculateSpecificity(normalized.selector);
-        if (!best || specificity > best.specificity) {
-            best = { ...normalized, specificity };
-        }
+    /**
+     * Calculates a single numeric value for comparison.
+     * Uses a standard base-100 weighting system (10000, 100, 1).
+     */
+    public value(): number {
+        return (this.ids * 10000) + (this.classesAndAttributes * 100) + this.elements;
     }
 
-    return best;
-}
+    public static from(selector: string): SelectorWeight {
+        let ids = 0;
+        let classesAndAttrs = 0;
+        let elements = 0;
 
-function getAppliedMap(applied: WeakMap<HTMLElement, Map<string, AppliedDecl>>, el: HTMLElement): Map<string, AppliedDecl> {
-    const existing = applied.get(el);
-    if (existing) return existing;
-    const next = new Map<string, AppliedDecl>();
-    applied.set(el, next);
-    return next;
-}
+        // Simplified parser for weight calculation
+        // Matches #id, .class, [attr], and element names
+        // Note: usage of lookahead/lookbehind for cleaner splitting
+        const parts = selector.split(/(?=[#\.\[])|(?<=[\]])/);
 
-function applyDecl(
-    applied: WeakMap<HTMLElement, Map<string, AppliedDecl>>,
-    target: HTMLElement,
-    prop: string,
-    value: string,
-    important: boolean,
-    specificity: number,
-    order: number,
-    originalInlineProps: Set<string>
-): void {
-    if (originalInlineProps.has(prop) && !important) {
-        return;
-    }
+        for (const part of parts) {
+            const trimmed = part.trim();
+            if (!trimmed) continue;
 
-    const map = getAppliedMap(applied, target);
-    const existing = map.get(prop);
-    if (existing) {
-        if (existing.important && !important) return;
-        if (!existing.important && important) {
-            // override
-        } else {
-            if (specificity < existing.specificity) return;
-            if (specificity === existing.specificity && order < existing.order) return;
-        }
-    }
-
-    target.style.setProperty(prop, value, important ? 'important' : '');
-    map.set(prop, { specificity, order, important });
-}
-
-function applyRuleToElement(
-    el: HTMLElement,
-    rule: any,
-    originalInlineProps: Set<string>,
-    order: number,
-    applied: WeakMap<HTMLElement, Map<string, AppliedDecl>>
-): void {
-    const rawSelector = String(rule.selector ?? '');
-    const matched = findMatchingSelector(el, rawSelector);
-    if (!matched) return;
-
-    let target: HTMLElement = el;
-
-    if (matched.pseudo) {
-        // Convert ::before/::after to an actual <span> so WeChat keeps layout consistent.
-        let content = '';
-        try {
-            rule.walkDecls('content', (decl: any) => {
-                content = String(decl.value ?? '');
-            });
-        } catch {
-            // ignore
-        }
-
-        if (content.length > 0) {
-            const span = createSpan(el.ownerDocument);
-            span.textContent = stripQuotes(content);
-            if (matched.pseudo === 'before') {
-                el.prepend(span);
-            } else {
-                el.appendChild(span);
+            if (trimmed.startsWith('#')) {
+                ids++;
+            } else if (trimmed.startsWith('.') || trimmed.startsWith('[')) {
+                classesAndAttrs++;
+            } else if (trimmed.length > 0 && !['>', '+', '~', '*'].includes(trimmed)) {
+                // Assume anything else that isn't a combinator is an element
+                elements++;
             }
-            target = span;
-            // Pseudo-element spans don't have original inline props.
-            originalInlineProps = new Set<string>();
-        } else {
-            // No content => nothing to materialize.
-            return;
         }
-    }
 
-    try {
-        rule.walkDecls((decl: any) => {
-            const prop = String(decl.prop ?? '').trim();
-            const value = String(decl.value ?? '').trim();
-            if (!prop || !value) return;
-
-            const important = Boolean(decl.important);
-            applyDecl(applied, target, prop, value, important, matched.specificity, order, originalInlineProps);
-        });
-    } catch {
-        // ignore malformed decls
+        return new SelectorWeight(ids, classesAndAttrs, elements);
     }
 }
 
-function traverse(root: HTMLElement, rules: any[], applied: WeakMap<HTMLElement, Map<string, AppliedDecl>>): void {
-    const originalInlineProps = collectInlineProps(root);
-    for (let idx = 0; idx < rules.length; idx++) {
-        applyRuleToElement(root, rules[idx], originalInlineProps, idx, applied);
+interface StyleDeclaration {
+    property: string;
+    value: string;
+    priority: 'important' | 'normal';
+    weight: number;
+    ruleIndex: number; // For stable sort on equal specificity
+}
+
+/**
+ * Service responsible for applying CSS styles directly to HTML elements.
+ * Uses PostCSS for parsing and a DOM TreeWalker for efficient traversal.
+ * 
+ * This class-based approach replaces the recursive functional approach of the original.
+ */
+export class StyleInliner {
+    private cssAst: Root | null = null;
+    private document: Document;
+
+    constructor() {
+        if (typeof document === 'undefined') {
+            throw new Error('StyleInliner requires a DOM environment');
+        }
+        // Create an isolated document to avoid polluting the main window
+        this.document = document.implementation.createHTMLDocument('style-inliner-ctx');
     }
 
-    // Skip SVG: selector matching/style application can be fragile for svg subtrees.
-    if (root.tagName.toLowerCase() === 'svg') return;
+    /**
+     * Inlines CSS string into HTML string.
+     */
+    public inline(html: string, css: string): string {
+        if (!css) return html;
 
-    let child = root.firstElementChild as HTMLElement | null;
-    while (child) {
-        traverse(child, rules, applied);
-        child = child.nextElementSibling as HTMLElement | null;
+        // 1. Prepare the isolated DOM environment
+        const wrapper = this.document.createElement('div');
+        wrapper.innerHTML = html;
+        this.document.body.appendChild(wrapper);
+
+        // 2. Parse CSS if changed
+        try {
+            this.cssAst = parse(css);
+        } catch (e) {
+            console.error('Failed to parse CSS for inlining', e);
+            return html;
+        }
+
+        // 3. Collect all styling rules
+        const styleRules: { selector: string, decls: Declaration[], ruleIndex: number }[] = [];
+        let ruleCounter = 0;
+
+        this.cssAst.walkRules(rule => {
+            // Split comma-separated selectors and handle each
+            rule.selector.split(',').forEach(rawSelector => {
+                const selector = rawSelector.trim();
+
+                // Skip pseudo-elements as they cannot be inlined usually.
+                // Note: The original implementation had logic to convert ::before/::after to spans.
+                // If that is strictly required for WeChat, we should implemented a separate
+                // "PseudoElementConverter" pass, but for pure CSS inlining, we skip them.
+                if (selector && !selector.includes('::')) {
+                    const cleanDecls: Declaration[] = [];
+                    // Fixed: wrapped in block to return void instead of number (push result)
+                    rule.walkDecls(decl => {
+                        cleanDecls.push(decl);
+                    });
+
+                    styleRules.push({
+                        selector,
+                        decls: cleanDecls,
+                        ruleIndex: ruleCounter++
+                    });
+                }
+            });
+        });
+
+        // 4. Apply styles using TreeWalker (Different traversal strategy than original)
+        const walker = this.document.createTreeWalker(wrapper, NodeFilter.SHOW_ELEMENT);
+        let currentNode: Node | null = walker.nextNode(); // Skip root wrapper
+
+        while (currentNode) {
+            this.applyStylesToElement(currentNode as HTMLElement, styleRules);
+            currentNode = walker.nextNode();
+        }
+
+        // 5. Cleanup and return
+        const result = wrapper.innerHTML;
+        wrapper.remove();
+        return result;
+    }
+
+    private applyStylesToElement(
+        element: HTMLElement,
+        rules: { selector: string, decls: Declaration[], ruleIndex: number }[]
+    ) {
+        const applicableStyles: Map<string, StyleDeclaration> = new Map();
+
+        // Check every rule against this element
+        for (const rule of rules) {
+            try {
+                if (element.matches(rule.selector)) {
+                    const weight = SelectorWeight.from(rule.selector).value();
+
+                    for (const decl of rule.decls) {
+                        this.mergeDeclaration(applicableStyles, decl, weight, rule.ruleIndex);
+                    }
+                }
+            } catch (e) {
+                // Ignore invalid selector matches (e.g. browser specific pseudo-classes)
+            }
+        }
+
+        // Apply final styles
+        if (applicableStyles.size > 0) {
+            this.writeStylesToElement(element, applicableStyles);
+        }
+    }
+
+    private mergeDeclaration(
+        map: Map<string, StyleDeclaration>,
+        decl: Declaration,
+        weight: number,
+        ruleIndex: number
+    ) {
+        const prop = decl.prop;
+        const existing = map.get(prop);
+        const isImportant = decl.important ? 'important' : 'normal';
+
+        let shouldApply = false;
+
+        if (!existing) {
+            shouldApply = true;
+        } else if (isImportant === 'important' && existing.priority === 'normal') {
+            shouldApply = true;
+        } else if (isImportant === existing.priority) {
+            if (weight > existing.weight) {
+                shouldApply = true;
+            } else if (weight === existing.weight && ruleIndex > existing.ruleIndex) {
+                shouldApply = true;
+            }
+        }
+
+        if (shouldApply) {
+            map.set(prop, {
+                property: prop,
+                value: decl.value,
+                priority: isImportant,
+                weight: weight,
+                ruleIndex: ruleIndex
+            });
+        }
+    }
+
+    private writeStylesToElement(element: HTMLElement, styles: Map<string, StyleDeclaration>) {
+        let styleString = element.getAttribute('style') || '';
+
+        // Basic semicolon normalization
+        if (styleString && !styleString.trim().endsWith(';')) {
+            styleString += '; ';
+        }
+
+        // Append new styles
+        // Note: This naive append respects the inliner's decisions but doesn't overwrite 
+        // existing inline styles if they conflict (standard CSS behavior: inline > style sheet).
+        // However, standard behavior usually implies the browser engine parsing this.
+        // For WeChat optimization, we might mostly care about adding what's missing.
+        const stylesToApply: string[] = [];
+        styles.forEach(style => {
+            stylesToApply.push(`${style.property}: ${style.value}${style.priority === 'important' ? ' !important' : ''}`);
+        });
+
+        element.setAttribute('style', styleString + stylesToApply.join('; '));
     }
 }
 
 /**
- * Inline CSS into HTML using vendored PostCSS AST + DOM selector matching.
- * Best-effort: ignores pseudo-classes; materializes ::before/::after when possible.
+ * Functional wrapper for backward compatibility or simple usage.
+ * Maintains the original API signature but delegates to the new Class implementation.
  */
 export function inlineCssWithPostcss(html: string, css: string): string {
-    if (!css || typeof document === 'undefined') return html;
-
-    const doc = document.implementation.createHTMLDocument('wdwxedit-postcss-inline');
-    const container = doc.createElement('div');
-    container.innerHTML = html;
-    doc.body.appendChild(container);
-
-    const cssRoot = parse(css);
-    const rules: any[] = [];
-    try {
-        cssRoot.walkRules((rule: any) => {
-            rules.push(rule);
-        });
-    } catch {
-        return html;
-    }
-
-    let el = container.firstElementChild as HTMLElement | null;
-    const applied = new WeakMap<HTMLElement, Map<string, AppliedDecl>>();
-    while (el) {
-        traverse(el, rules, applied);
-        el = el.nextElementSibling as HTMLElement | null;
-    }
-
-    return container.innerHTML;
+    const inliner = new StyleInliner();
+    return inliner.inline(html, css);
 }

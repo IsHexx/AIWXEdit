@@ -151,7 +151,7 @@ export class ArticleTransformer {
         }
 
         // Wrap into a scoped container first, then inline all CSS into the HTML.
-        const wrapped = `<section class="wx-article">${fullHtml}</section>`;
+        const wrapped = `<div class="wx-article">${fullHtml}</div>`;
         const normalized = normalizeWechatHtml(wrapped);
 
         const themeCSS = assetStore.getThemeCSS(settings.style.theme);

@@ -6,8 +6,9 @@
  */
 
 import type { App, PluginManifest } from 'obsidian';
-import { Notice } from 'obsidian';
+import { Notice, requestUrl } from 'obsidian';
 import { getBuiltinThemeCss } from '../css/builtinThemes';
+import { BUILTIN_THEME_CATALOG, type ThemeCatalogItem } from '../themes/themeCatalog';
 
 /**
  * Theme definition
@@ -35,6 +36,12 @@ export interface HighlightAsset {
     css: string;
 }
 
+interface ThemeConfigItem {
+    name: string;
+    className: string;
+    [key: string]: unknown;
+}
+
 /**
  * Asset Store
  * 
@@ -48,6 +55,7 @@ export class AssetStore {
     private themes: Map<string, ThemeAsset> = new Map();
     private highlights: Map<string, HighlightAsset> = new Map();
     private customCSS = '';
+    private customThemeCatalog: ThemeCatalogItem[] = [];
     private isLoaded = false;
 
     private assetsPath = '';
@@ -56,6 +64,7 @@ export class AssetStore {
     private themesConfigPath = '';
     private highlightsConfigPath = '';
     private customCSSPath = '';
+    private themeCatalogPath = '';
 
     private constructor() { }
 
@@ -81,6 +90,7 @@ export class AssetStore {
         this.themesConfigPath = `${this.assetsPath}themes.json`;
         this.highlightsConfigPath = `${this.assetsPath}highlights.json`;
         this.customCSSPath = `${this.assetsPath}custom.css`;
+        this.themeCatalogPath = `${this.assetsPath}theme-market.json`;
     }
 
     /**
@@ -92,6 +102,7 @@ export class AssetStore {
         await this.loadBuiltInThemes();
         await this.loadBuiltInHighlights();
         await this.loadCustomCSS();
+        await this.loadThemeCatalog();
         this.isLoaded = true;
     }
 
@@ -166,6 +177,108 @@ export class AssetStore {
             return builtin;
         }
         return this.getDefaultThemeCSS();
+    }
+
+    /**
+     * Get theme catalog (builtin + custom)
+     */
+    getThemeCatalog(): ThemeCatalogItem[] {
+        const merged = new Map<string, ThemeCatalogItem>();
+        for (const item of BUILTIN_THEME_CATALOG) {
+            merged.set(item.id, { ...item, custom: false });
+        }
+        for (const item of this.customThemeCatalog) {
+            merged.set(item.id, { ...item, custom: true });
+        }
+        return Array.from(merged.values());
+    }
+
+    /**
+     * Whether a theme is installed (downloaded)
+     */
+    isThemeInstalled(id: string): boolean {
+        const theme = this.themes.get(id);
+        return !!theme && !theme.builtIn;
+    }
+
+    /**
+     * Install a theme from catalog entry
+     */
+    async installTheme(item: ThemeCatalogItem): Promise<void> {
+        if (!this.app) throw new Error('AssetStore not initialized');
+        if (item.id === 'default') {
+            new Notice('默认主题无需下载');
+            return;
+        }
+
+        const adapter = this.app.vault.adapter;
+        await this.ensureDir(this.assetsPath);
+        await this.ensureDir(this.themesPath);
+
+        const response = await requestUrl({ url: item.cssUrl, method: 'GET' });
+        const cssRaw = typeof response.text === 'string' ? response.text : '';
+        if (!cssRaw) {
+            throw new Error('主题 CSS 为空或下载失败');
+        }
+
+        const css = this.normalizeThemeCss(cssRaw, item);
+        const cssPath = `${this.themesPath}${item.id}.css`;
+        await adapter.write(cssPath, css);
+
+        await this.updateThemesConfig(item);
+        await this.reload();
+    }
+
+    /**
+     * Uninstall a downloaded theme
+     */
+    async uninstallTheme(id: string): Promise<void> {
+        if (!this.app) throw new Error('AssetStore not initialized');
+        if (!this.isThemeInstalled(id)) return;
+
+        const adapter = this.app.vault.adapter;
+        const cssPath = `${this.themesPath}${id}.css`;
+        if (await adapter.exists(cssPath)) {
+            await adapter.remove(cssPath);
+        }
+        await this.removeThemeFromConfig(id);
+        await this.reload();
+    }
+
+    /**
+     * Add custom theme entry to catalog
+     */
+    async addCustomThemeToCatalog(item: ThemeCatalogItem): Promise<void> {
+        if (!this.app) throw new Error('AssetStore not initialized');
+
+        const id = this.sanitizeThemeId(item.id || item.name);
+        if (!id) {
+            throw new Error('主题 ID 无效');
+        }
+
+        const normalized: ThemeCatalogItem = {
+            ...item,
+            id,
+            custom: true,
+        };
+
+        const existing = this.customThemeCatalog.findIndex(t => t.id === id);
+        if (existing >= 0) {
+            this.customThemeCatalog[existing] = normalized;
+        } else {
+            this.customThemeCatalog.push(normalized);
+        }
+
+        await this.saveCustomThemeCatalog();
+    }
+
+    /**
+     * Remove custom theme entry from catalog
+     */
+    async removeCustomThemeFromCatalog(id: string): Promise<void> {
+        if (!this.app) throw new Error('AssetStore not initialized');
+        this.customThemeCatalog = this.customThemeCatalog.filter(t => t.id !== id);
+        await this.saveCustomThemeCatalog();
     }
 
     /**
@@ -365,6 +478,106 @@ export class AssetStore {
         this.highlights.clear();
         this.isLoaded = false;
         await this.load();
+    }
+
+    // ==================== Theme Catalog Helpers ====================
+
+    private async loadThemeCatalog(): Promise<void> {
+        this.customThemeCatalog = [];
+        if (!this.app) return;
+        const adapter = this.app.vault.adapter;
+        if (!await adapter.exists(this.themeCatalogPath)) {
+            return;
+        }
+
+        try {
+            const raw = await adapter.read(this.themeCatalogPath);
+            const items = JSON.parse(raw) as ThemeCatalogItem[];
+            if (Array.isArray(items)) {
+                this.customThemeCatalog = items.map(item => ({ ...item, custom: true }));
+            }
+        } catch (error) {
+            console.error('Failed to load theme catalog:', error);
+            new Notice('主题市场加载失败，请检查 assets 目录');
+        }
+    }
+
+    private async saveCustomThemeCatalog(): Promise<void> {
+        if (!this.app) return;
+        const adapter = this.app.vault.adapter;
+        await this.ensureDir(this.assetsPath);
+        const payload = JSON.stringify(this.customThemeCatalog, null, 2);
+        await adapter.write(this.themeCatalogPath, payload);
+    }
+
+    private async updateThemesConfig(item: ThemeCatalogItem): Promise<void> {
+        if (!this.app) return;
+        const adapter = this.app.vault.adapter;
+        await this.ensureDir(this.assetsPath);
+
+        const existing = await this.readThemesConfig();
+        const updated: ThemeConfigItem[] = existing.filter(entry => entry.className !== item.id);
+        updated.push({
+            name: item.name,
+            className: item.id,
+            cssUrl: item.cssUrl,
+            homepage: item.homepage,
+            author: item.author,
+            license: item.license,
+        });
+        await adapter.write(this.themesConfigPath, JSON.stringify(updated, null, 2));
+    }
+
+    private async removeThemeFromConfig(id: string): Promise<void> {
+        if (!this.app) return;
+        const adapter = this.app.vault.adapter;
+        const existing = await this.readThemesConfig();
+        const updated = existing.filter(entry => entry.className !== id);
+        await adapter.write(this.themesConfigPath, JSON.stringify(updated, null, 2));
+    }
+
+    private async readThemesConfig(): Promise<ThemeConfigItem[]> {
+        if (!this.app) return [];
+        const adapter = this.app.vault.adapter;
+        if (!await adapter.exists(this.themesConfigPath)) {
+            return [];
+        }
+        try {
+            const raw = await adapter.read(this.themesConfigPath);
+            const items = JSON.parse(raw) as ThemeConfigItem[];
+            return Array.isArray(items) ? items : [];
+        } catch {
+            return [];
+        }
+    }
+
+    private async ensureDir(path: string): Promise<void> {
+        if (!this.app) return;
+        const adapter = this.app.vault.adapter;
+        if (!await adapter.exists(path)) {
+            await adapter.mkdir(path);
+        }
+    }
+
+    private sanitizeThemeId(input: string): string {
+        const base = (input || '').toLowerCase().trim();
+        if (!base) return '';
+        const sanitized = base.replace(/[^a-z0-9-_]+/g, '-').replace(/^-+|-+$/g, '');
+        return sanitized;
+    }
+
+    private normalizeThemeCss(css: string, item: ThemeCatalogItem): string {
+        let output = css;
+        if (item.replace) {
+            for (const [from, to] of item.replace) {
+                output = output.split(from).join(to);
+            }
+        }
+        output = output.replace(/\.markdown-body/g, '.wx-article');
+        output = output.replace(/:root/g, '.wx-article');
+        output = output.replace(/(^|[\\s,{])body(?=[\\s,{])/g, '$1.wx-article');
+        output = output.replace(/(^|[\\s,{])html(?=[\\s,{])/g, '$1.wx-article');
+        return output;
     }
 }
 

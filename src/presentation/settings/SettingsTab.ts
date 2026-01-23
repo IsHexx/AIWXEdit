@@ -6,10 +6,12 @@
 
 import { App, Notice, PluginSettingTab, Setting } from 'obsidian';
 import type WDWXEditPlugin from '../../plugin';
-import { getSettingsStore, SettingsStore } from '../../infrastructure/storage';
+import { getSettingsStore, getAssetStore, SettingsStore } from '../../infrastructure/storage';
+import type { ThemeCatalogItem } from '../../infrastructure/themes/themeCatalog';
 import type { AIProvider } from '../../types/ai.types';
 import { PROVIDER_DEFAULTS } from '../../types/ai.types';
 import type { WechatAccountConfig } from '../../types/settings.types';
+import { VIEW_TYPE_PUBLISH } from '../views/PublishView';
 
 /**
  * Settings Tab
@@ -37,6 +39,7 @@ export class SettingsTab extends PluginSettingTab {
 
         // Style Section
         this.createStyleSection(containerEl);
+        this.createThemeMarketSection(containerEl);
 
         // AI Section
         this.createAISection(containerEl);
@@ -352,6 +355,235 @@ export class SettingsTab extends PluginSettingTab {
                     })
                 );
         }
+    }
+
+    /**
+     * Create theme marketplace section
+     */
+    private createThemeMarketSection(container: HTMLElement): void {
+        container.createEl('h2', { text: '主题市场' });
+
+        const assetStore = getAssetStore();
+        const catalog = assetStore.getThemeCatalog();
+
+        if (catalog.length === 0) {
+            container.createEl('p', {
+                text: '暂无内置主题库，可在下方添加自定义主题源。',
+                cls: 'setting-item-description',
+            });
+        }
+
+        catalog.forEach(item => {
+            const setting = new Setting(container)
+                .setName(item.name);
+
+            const desc = this.buildThemeDescription(item);
+            if (desc) {
+                setting.setDesc(desc);
+            }
+
+            if (assetStore.isThemeInstalled(item.id)) {
+                setting
+                    .addButton(btn => btn
+                        .setButtonText('重新下载')
+                        .onClick(async () => {
+                            await this.downloadTheme(item);
+                        })
+                    )
+                    .addButton(btn => btn
+                        .setButtonText('移除')
+                        .onClick(async () => {
+                            await this.removeTheme(item.id);
+                        })
+                    );
+            } else {
+                setting.addButton(btn => btn
+                    .setButtonText('下载')
+                    .setCta()
+                    .onClick(async () => {
+                        await this.downloadTheme(item);
+                    })
+                );
+            }
+
+            if (item.custom) {
+                setting.addButton(btn => btn
+                    .setButtonText('从列表移除')
+                    .onClick(async () => {
+                        await this.removeCustomTheme(item.id);
+                    })
+                );
+            }
+        });
+
+        const addSection = container.createDiv({ cls: 'wdwxedit-theme-market-add' });
+        addSection.createEl('h3', { text: '添加自定义主题' });
+
+        const formState = {
+            name: '',
+            cssUrl: '',
+            homepage: '',
+            license: '',
+        };
+
+        new Setting(addSection)
+            .setName('主题名称')
+            .addText(text => text
+                .setPlaceholder('例如：GitHub 风格')
+                .onChange(value => { formState.name = value.trim(); })
+            );
+
+        new Setting(addSection)
+            .setName('CSS 地址')
+            .setDesc('支持 raw.githubusercontent.com / jsDelivr / cdnjs 等直链')
+            .addText(text => text
+                .setPlaceholder('https://...')
+                .onChange(value => { formState.cssUrl = value.trim(); })
+            );
+
+        new Setting(addSection)
+            .setName('项目主页（可选）')
+            .addText(text => text
+                .setPlaceholder('https://github.com/...')
+                .onChange(value => { formState.homepage = value.trim(); })
+            );
+
+        new Setting(addSection)
+            .setName('许可证（可选）')
+            .addText(text => text
+                .setPlaceholder('MIT / Apache-2.0')
+                .onChange(value => { formState.license = value.trim(); })
+            );
+
+        new Setting(addSection)
+            .addButton(btn => btn
+                .setButtonText('添加到列表')
+                .setCta()
+                .onClick(async () => {
+                    if (!formState.name || !formState.cssUrl) {
+                        new Notice('请填写主题名称和 CSS 地址');
+                        return;
+                    }
+                    try {
+                        await assetStore.addCustomThemeToCatalog({
+                            id: formState.name,
+                            name: formState.name,
+                            cssUrl: formState.cssUrl,
+                            homepage: formState.homepage || undefined,
+                            license: formState.license || undefined,
+                        });
+                        new Notice('主题已加入列表');
+                        this.display();
+                    } catch (error) {
+                        console.error('Add theme failed:', error);
+                        new Notice('主题添加失败，请检查地址');
+                    }
+                })
+            )
+            .addButton(btn => btn
+                .setButtonText('添加并下载')
+                .onClick(async () => {
+                    if (!formState.name || !formState.cssUrl) {
+                        new Notice('请填写主题名称和 CSS 地址');
+                        return;
+                    }
+                    try {
+                        const item: ThemeCatalogItem = {
+                            id: formState.name,
+                            name: formState.name,
+                            cssUrl: formState.cssUrl,
+                            homepage: formState.homepage || undefined,
+                            license: formState.license || undefined,
+                            custom: true,
+                        };
+                        await assetStore.addCustomThemeToCatalog(item);
+                        await this.downloadTheme(item);
+                        this.display();
+                    } catch (error) {
+                        console.error('Add theme failed:', error);
+                        new Notice('主题添加失败，请检查地址');
+                    }
+                })
+            );
+    }
+
+    private buildThemeDescription(item: ThemeCatalogItem): DocumentFragment | null {
+        if (!item.description && !item.homepage && !item.license && !item.author) {
+            return null;
+        }
+
+        const frag = document.createDocumentFragment();
+        const wrapper = document.createElement('div');
+        if (item.description) {
+            const desc = document.createElement('div');
+            desc.textContent = item.description;
+            wrapper.appendChild(desc);
+        }
+        if (item.author || item.license) {
+            const meta = document.createElement('div');
+            meta.textContent = [item.author ? `作者：${item.author}` : '', item.license ? `许可：${item.license}` : '']
+                .filter(Boolean)
+                .join(' · ');
+            wrapper.appendChild(meta);
+        }
+        if (item.homepage) {
+            const link = document.createElement('a');
+            link.href = item.homepage;
+            link.textContent = '项目主页';
+            link.target = '_blank';
+            link.rel = 'noreferrer';
+            wrapper.appendChild(link);
+        }
+        frag.appendChild(wrapper);
+        return frag;
+    }
+
+    private async downloadTheme(item: ThemeCatalogItem): Promise<void> {
+        const assetStore = getAssetStore();
+        try {
+            await assetStore.installTheme(item);
+            new Notice('主题下载完成');
+            this.refreshPublishViewThemes();
+            this.display();
+        } catch (error) {
+            console.error('Theme download failed:', error);
+            new Notice('主题下载失败，请检查链接');
+        }
+    }
+
+    private async removeTheme(id: string): Promise<void> {
+        const assetStore = getAssetStore();
+        try {
+            await assetStore.uninstallTheme(id);
+            new Notice('主题已移除');
+            this.refreshPublishViewThemes();
+            this.display();
+        } catch (error) {
+            console.error('Theme removal failed:', error);
+            new Notice('主题移除失败');
+        }
+    }
+
+    private async removeCustomTheme(id: string): Promise<void> {
+        const assetStore = getAssetStore();
+        try {
+            await assetStore.removeCustomThemeFromCatalog(id);
+            new Notice('已从主题列表移除');
+            this.display();
+        } catch (error) {
+            console.error('Theme catalog removal failed:', error);
+            new Notice('移除失败');
+        }
+    }
+
+    private refreshPublishViewThemes(): void {
+        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_PUBLISH);
+        leaves.forEach(leaf => {
+            const view = leaf.view as any;
+            if (view && typeof view.refreshStyleEditor === 'function') {
+                view.refreshStyleEditor();
+            }
+        });
     }
 
     /**

@@ -84,6 +84,17 @@ export function postProcessInlinedWechatHtml(html: string): string {
     container.innerHTML = html;
     doc.body.appendChild(container);
 
+    // WeChat sometimes drops `background` shorthand on pasted elements. Ensure root uses background-color.
+    const article = container.querySelector<HTMLElement>('.wx-article');
+    if (article) {
+        const inline = article.getAttribute('style') || '';
+        const hasBgColor = /(?:^|;)\s*background-color\s*:/i.test(inline);
+        const bgMatch = inline.match(/(?:^|;)\s*background\s*:\s*([^;]+)\s*(?:;|$)/i);
+        if (!hasBgColor && bgMatch && bgMatch[1]) {
+            article.style.setProperty('background-color', bgMatch[1].trim());
+        }
+    }
+
     const codeScopes = container.querySelectorAll('.code-section');
     codeScopes.forEach(scope => {
         // Only wrap inline token spans inside code blocks. Wrapping block elements (e.g. <pre>/<li>)

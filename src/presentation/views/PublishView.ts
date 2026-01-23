@@ -24,6 +24,7 @@ export class PublishView extends ItemView {
     private previewEl: HTMLElement | null = null;
     private toolbarEl: HTMLElement | null = null;
     private styleEditor: StyleEditor | null = null;
+    private styleEditorContainer: HTMLElement | null = null;
     private dynamicStyleEl: HTMLStyleElement | null = null;
 
     constructor(leaf: WorkspaceLeaf, plugin: WDWXEditPlugin) {
@@ -87,8 +88,8 @@ export class PublishView extends ItemView {
         this.buildToolbar(this.toolbarEl);
 
         // Style editor
-        const styleEditorEl = this.contentEl.createDiv({ cls: 'wdwxedit-style-editor-container' });
-        this.buildStyleEditor(styleEditorEl);
+        this.styleEditorContainer = this.contentEl.createDiv({ cls: 'wdwxedit-style-editor-container' });
+        this.buildStyleEditor(this.styleEditorContainer);
 
         // Preview container
         this.previewEl = this.contentEl.createDiv({ cls: 'wdwxedit-preview' });
@@ -196,6 +197,16 @@ export class PublishView extends ItemView {
             highlights,
         });
         this.styleEditor.render();
+    }
+
+    /**
+     * Refresh style editor theme list (after download/remove)
+     */
+    refreshStyleEditor(): void {
+        if (!this.styleEditorContainer) return;
+        this.styleEditorContainer.empty();
+        this.styleEditor = null;
+        this.buildStyleEditor(this.styleEditorContainer);
     }
     private buildToolbar(container: HTMLElement): void {
         // Refresh button
