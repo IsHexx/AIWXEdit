@@ -161,6 +161,7 @@ export class PreviewService {
 
         html = await this.uploadImagesForClipboard(html);
         html = await this.inlineLocalImagesForClipboard(html);
+        html = await this.wrapWechatBackgroundForClipboard(html);
         const plainText = this.extractPlainText(html);
 
         if (this.copyViaElectron(html, plainText)) {
@@ -176,6 +177,213 @@ export class PreviewService {
         }
 
         return false;
+    }
+
+    private async wrapWechatBackgroundForClipboard(html: string): Promise<string> {
+        if (!html || typeof document === 'undefined') {
+            return html;
+        }
+
+        const container = document.createElement('div');
+        container.style.position = 'fixed';
+        container.style.left = '-9999px';
+        container.style.top = '0';
+        container.style.opacity = '0';
+        container.style.pointerEvents = 'none';
+        container.style.userSelect = 'none';
+        container.innerHTML = html;
+
+        document.body.appendChild(container);
+
+        try {
+            await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+
+            const root = container.firstElementChild as HTMLElement | null;
+            if (!root) return html;
+
+            const article = root.classList.contains('wx-article')
+                ? root
+                : (root.querySelector<HTMLElement>('.wx-article') || root);
+
+            const isTransparent = (value: string) =>
+                !value || value === 'transparent' || value === 'rgba(0, 0, 0, 0)';
+
+            const isInheritLike = (value: string) => {
+                const v = value.trim().toLowerCase();
+                return v === 'inherit' || v === 'initial' || v === 'unset' || v === 'revert';
+            };
+
+            let pageBg: string | null = null;
+            for (let node: HTMLElement | null = article; node; node = node.parentElement) {
+                const bg = getComputedStyle(node).backgroundColor;
+                if (!isTransparent(bg)) {
+                    pageBg = this.normalizeWechatColor(bg);
+                    break;
+                }
+            }
+
+            const effectiveBg = pageBg;
+
+            const articleStyle = getComputedStyle(article);
+            const baseFontFamily = articleStyle.fontFamily || '';
+            const baseFontSize = articleStyle.fontSize || '';
+            const baseLineHeight = articleStyle.lineHeight || '';
+            const baseColor = articleStyle.color ? this.normalizeWechatColor(articleStyle.color) : '';
+            const baseTextAlign = articleStyle.textAlign || '';
+
+            const rootPadLeft = parseFloat(articleStyle.paddingLeft) || 0;
+            const rootPadRight = parseFloat(articleStyle.paddingRight) || 0;
+            const rootPadTop = parseFloat(articleStyle.paddingTop) || 0;
+            const rootPadBottom = parseFloat(articleStyle.paddingBottom) || 0;
+
+            // Wrap everything into a clean <section> root (WeChat paste tends to keep it more consistently than div wrappers).
+            const wrapper = document.createElement('section');
+            const wrapperStyle: string[] = [];
+            if (baseFontFamily) wrapperStyle.push(`font-family: ${baseFontFamily}`);
+            if (baseFontSize) wrapperStyle.push(`font-size: ${baseFontSize}`);
+            if (baseLineHeight && !isInheritLike(baseLineHeight)) wrapperStyle.push(`line-height: ${baseLineHeight}`);
+            if (baseColor) wrapperStyle.push(`color: ${baseColor}`);
+            if (baseTextAlign) wrapperStyle.push(`text-align: ${baseTextAlign}`);
+            if (effectiveBg) wrapperStyle.push(`background-color: ${effectiveBg}`);
+            if (wrapperStyle.length > 0) wrapper.setAttribute('style', `${wrapperStyle.join('; ')};`);
+
+            while (article.firstChild) {
+                wrapper.appendChild(article.firstChild);
+            }
+            article.replaceWith(wrapper);
+
+            const fallbackBg = effectiveBg || 'rgb(255, 255, 255)';
+
+            const blockTagNames = new Set([
+                'div', 'section', 'article',
+                'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+                'ul', 'ol', 'li',
+                'blockquote', 'pre',
+                'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th',
+                'hr'
+            ]);
+
+            const elements: HTMLElement[] = [wrapper, ...Array.from(wrapper.querySelectorAll<HTMLElement>('*'))];
+            for (const element of elements) {
+                const tag = element.tagName.toLowerCase();
+                const computed = getComputedStyle(element);
+
+                if (blockTagNames.has(tag)) {
+                    const bgColor = computed.backgroundColor;
+                    if (isTransparent(bgColor)) {
+                        element.style.backgroundColor = fallbackBg;
+                    }
+
+                    // WeChat does not paint backgrounds on margins. Convert vertical margins into paddings.
+                    const mt = parseFloat(computed.marginTop) || 0;
+                    const mb = parseFloat(computed.marginBottom) || 0;
+                    if (mt > 0) {
+                        const pt = parseFloat(computed.paddingTop) || 0;
+                        element.style.paddingTop = `${pt + mt}px`;
+                        element.style.marginTop = '0';
+                    }
+                    if (mb > 0) {
+                        const pb = parseFloat(computed.paddingBottom) || 0;
+                        element.style.paddingBottom = `${pb + mb}px`;
+                        element.style.marginBottom = '0';
+                    }
+
+                    // If the original wrapper gets stripped by WeChat, inherited typography would be lost.
+                    // Pin base typography styles onto block nodes (without overriding explicit styles).
+                    const isCodeLike = tag === 'pre' || tag === 'code';
+
+                    if (!isCodeLike && baseFontFamily && (!element.style.fontFamily || isInheritLike(element.style.fontFamily))) {
+                        element.style.fontFamily = baseFontFamily;
+                    }
+
+                    const isHeading = tag === 'h1' || tag === 'h2' || tag === 'h3' || tag === 'h4' || tag === 'h5' || tag === 'h6';
+                    if (!isCodeLike && !isHeading && baseFontSize && (!element.style.fontSize || isInheritLike(element.style.fontSize))) {
+                        element.style.fontSize = baseFontSize;
+                    }
+
+                    if (!isCodeLike && !isHeading && baseLineHeight && !isInheritLike(baseLineHeight)
+                        && (!element.style.lineHeight || isInheritLike(element.style.lineHeight))) {
+                        element.style.lineHeight = baseLineHeight;
+                    }
+
+                    if (!isCodeLike && baseTextAlign && (!element.style.textAlign || isInheritLike(element.style.textAlign))) {
+                        element.style.textAlign = baseTextAlign;
+                    }
+
+                    if (!isCodeLike && baseColor && (!element.style.color || isInheritLike(element.style.color))) {
+                        element.style.color = baseColor;
+                    }
+                }
+
+                // Preserve root padding even if the wrapper gets unwrapped by the WeChat editor.
+                if (element.parentElement === wrapper && (rootPadLeft || rootPadRight || rootPadTop || rootPadBottom)) {
+                    const pl = parseFloat(computed.paddingLeft) || 0;
+                    const pr = parseFloat(computed.paddingRight) || 0;
+                    const pt = parseFloat(computed.paddingTop) || 0;
+                    const pb = parseFloat(computed.paddingBottom) || 0;
+                    if (rootPadLeft) element.style.paddingLeft = `${pl + rootPadLeft}px`;
+                    if (rootPadRight) element.style.paddingRight = `${pr + rootPadRight}px`;
+                    if (rootPadTop) element.style.paddingTop = `${pt + rootPadTop}px`;
+                    if (rootPadBottom) element.style.paddingBottom = `${pb + rootPadBottom}px`;
+                }
+            }
+
+            wrapper.style.padding = '0';
+
+            return wrapper.outerHTML;
+        } catch {
+            return html;
+        } finally {
+            document.body.removeChild(container);
+        }
+    }
+
+    private normalizeWechatColor(color: string): string {
+        const rgbaMatch = color.match(
+            /^rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(0|1|0?\.\d+)\s*\)$/i
+        );
+        if (!rgbaMatch) {
+            return color;
+        }
+
+        const r = Math.min(255, Math.max(0, Number(rgbaMatch[1])));
+        const g = Math.min(255, Math.max(0, Number(rgbaMatch[2])));
+        const b = Math.min(255, Math.max(0, Number(rgbaMatch[3])));
+        const a = Math.min(1, Math.max(0, Number(rgbaMatch[4])));
+
+        if (a <= 0) {
+            return 'transparent';
+        }
+
+        // Assume white backdrop and flatten alpha to solid rgb for WeChat paste compatibility.
+        const rr = Math.round((1 - a) * 255 + a * r);
+        const gg = Math.round((1 - a) * 255 + a * g);
+        const bb = Math.round((1 - a) * 255 + a * b);
+
+        return `rgb(${rr}, ${gg}, ${bb})`;
+    }
+
+    private toHexColor(color: string): string | null {
+        if (!color) return null;
+
+        const hexMatch = color.trim().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+        if (hexMatch) {
+            const hex = hexMatch[1].toLowerCase();
+            if (hex.length === 3) {
+                return `#${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`;
+            }
+            return `#${hex}`;
+        }
+
+        const rgbMatch = color.trim().match(/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i);
+        if (!rgbMatch) return null;
+
+        const r = Math.min(255, Math.max(0, Number(rgbMatch[1])));
+        const g = Math.min(255, Math.max(0, Number(rgbMatch[2])));
+        const b = Math.min(255, Math.max(0, Number(rgbMatch[3])));
+        const toHex2 = (v: number) => v.toString(16).padStart(2, '0');
+
+        return `#${toHex2(r)}${toHex2(g)}${toHex2(b)}`;
     }
 
     /**
