@@ -5,11 +5,12 @@
  * Handles article rendering and real-time updates.
  */
 
-import type { App, TFile } from 'obsidian';
+import { App, TFile } from 'obsidian';
 import type { ParsedArticle, RenderOptions } from '../types/article.types';
 import type { StyleConfig } from '../types/settings.types';
 import { getArticleTransformer, ArticleTransformer } from '../domain/article';
 import { getSettingsStore } from '../infrastructure/storage';
+import { getWechatClient } from '../infrastructure/wechat';
 
 /**
  * Preview state
@@ -155,27 +156,26 @@ export class PreviewService {
      * Copy styled content to clipboard
      */
     async copyToClipboard(): Promise<boolean> {
-        const html = this.getStyledHTML();
+        let html = this.getStyledHTML();
         if (!html) return false;
 
-        try {
-            // Create a blob with HTML content
-            const blob = new Blob([html], { type: 'text/html' });
-            const clipboardItem = new ClipboardItem({
-                'text/html': blob,
-                'text/plain': new Blob([html], { type: 'text/plain' }),
-            });
-            await navigator.clipboard.write([clipboardItem]);
+        html = await this.uploadImagesForClipboard(html);
+        html = await this.inlineLocalImagesForClipboard(html);
+        const plainText = this.extractPlainText(html);
+
+        if (this.copyViaElectron(html, plainText)) {
             return true;
-        } catch {
-            // Fallback to text copy
-            try {
-                await navigator.clipboard.writeText(html);
-                return true;
-            } catch {
-                return false;
-            }
         }
+
+        if (await this.copyViaClipboardApi(html, plainText)) {
+            return true;
+        }
+
+        if (this.copyViaExecCommand(html, plainText)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -206,6 +206,243 @@ export class PreviewService {
                 console.error('Preview listener error:', error);
             }
         });
+    }
+
+    private async inlineLocalImagesForClipboard(html: string): Promise<string> {
+        if (!this.app || !this.state.file) return html;
+
+        const doc = document.implementation.createHTMLDocument('wdwxedit-inline-images');
+        const container = doc.createElement('div');
+        container.innerHTML = html;
+        doc.body.appendChild(container);
+
+        const images = Array.from(container.querySelectorAll('img'));
+        for (const img of images) {
+            const src = img.getAttribute('src') || '';
+            const vaultPathAttr = img.getAttribute('data-vault-path') || '';
+            if (!src) continue;
+            if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('data:') || src.startsWith('blob:')) {
+                continue;
+            }
+
+            const candidate = vaultPathAttr || src;
+            const resolved = this.resolvePath(candidate, this.state.file);
+            const imageFile = this.app.vault.getAbstractFileByPath(resolved);
+            if (!imageFile || !(imageFile instanceof TFile)) {
+                continue;
+            }
+
+            try {
+                const buffer = await this.app.vault.readBinary(imageFile as TFile);
+                const mime = this.getMimeType(imageFile.name);
+                const base64 = this.arrayBufferToBase64(buffer);
+                img.setAttribute('src', `data:${mime};base64,${base64}`);
+            } catch {
+                // Ignore image conversion errors and keep original src.
+            }
+        }
+
+        return container.innerHTML;
+    }
+
+    private async uploadImagesForClipboard(html: string): Promise<string> {
+        if (!this.app || !this.state.file || typeof document === 'undefined') return html;
+
+        const settings = getSettingsStore().getAll();
+        const account = settings.accounts[settings.defaultAccountIndex];
+        if (!account?.appId || !account.appSecret) {
+            return html;
+        }
+
+        const client = getWechatClient(account.appId, account.appSecret);
+        if (!client.isConfigured()) return html;
+
+        const doc = document.implementation.createHTMLDocument('wdwxedit-upload-clipboard');
+        const container = doc.createElement('div');
+        container.innerHTML = html;
+        doc.body.appendChild(container);
+
+        const images = Array.from(container.querySelectorAll('img'));
+        for (const img of images) {
+            const src = img.getAttribute('src') || '';
+            const vaultPathAttr = img.getAttribute('data-vault-path') || '';
+
+            if (!src) continue;
+            if (src.startsWith('http://mmbiz') || src.startsWith('https://mmbiz')) {
+                continue;
+            }
+            if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('data:') || src.startsWith('blob:')) {
+                continue;
+            }
+
+            const candidate = vaultPathAttr || src;
+            const resolved = this.resolvePath(candidate, this.state.file);
+            const imageFile = this.app.vault.getAbstractFileByPath(resolved);
+            if (!imageFile || !(imageFile instanceof TFile)) {
+                continue;
+            }
+
+            try {
+                const buffer = await this.app.vault.readBinary(imageFile);
+                const mime = this.getMimeType(imageFile.name);
+                const upload = await client.uploadImageBuffer(buffer, imageFile.name, mime, 'article_image');
+                if (upload.success && (upload.url || upload.mediaId)) {
+                    const nextUrl = upload.url || `https://mmbiz.qlogo.cn/mmbiz_png/${upload.mediaId}/0?wx_fmt=png`;
+                    img.setAttribute('src', nextUrl);
+                }
+            } catch {
+                // Ignore upload errors; fallback to base64 copy.
+            }
+        }
+
+        return container.innerHTML;
+    }
+
+    private resolvePath(rawPath: string, sourceFile: TFile): string {
+        const trimmed = rawPath.trim();
+        if (!trimmed) return trimmed;
+
+        const normalized = trimmed.startsWith('/') ? trimmed.substring(1) : trimmed;
+        const direct = this.app?.vault.getAbstractFileByPath(normalized);
+        if (direct && direct instanceof TFile) {
+            return direct.path;
+        }
+
+        try {
+            const decoded = decodeURIComponent(normalized);
+            if (decoded !== normalized) {
+                const decodedFile = this.app?.vault.getAbstractFileByPath(decoded);
+                if (decodedFile && decodedFile instanceof TFile) {
+                    return decodedFile.path;
+                }
+            }
+        } catch {
+            // ignore decode errors
+        }
+
+        const sourceDir = sourceFile.parent?.path || '';
+        return sourceDir ? `${sourceDir}/${normalized}` : normalized;
+    }
+
+    private getMimeType(filename: string): string {
+        const ext = filename.split('.').pop()?.toLowerCase();
+        const mimeTypes: Record<string, string> = {
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
+            'png': 'image/png',
+            'gif': 'image/gif',
+            'webp': 'image/webp',
+        };
+        return mimeTypes[ext || ''] || 'image/png';
+    }
+
+    private arrayBufferToBase64(buffer: ArrayBuffer): string {
+        const bytes = new Uint8Array(buffer);
+        let binary = '';
+        for (let i = 0; i < bytes.length; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return btoa(binary);
+    }
+
+    private extractPlainText(html: string): string {
+        const doc = document.implementation.createHTMLDocument('wdwxedit-plain-text');
+        const container = doc.createElement('div');
+        container.innerHTML = html;
+        doc.body.appendChild(container);
+        return (container.textContent || '').trim();
+    }
+
+    private copyViaElectron(html: string, plainText: string): boolean {
+        try {
+            const w = window as any;
+            const electron = w?.require ? w.require('electron') : undefined;
+            const clipboard = electron?.clipboard;
+            if (clipboard && typeof clipboard.write === 'function') {
+                clipboard.write({ html, text: plainText });
+                return true;
+            }
+        } catch {
+            // ignore
+        }
+        return false;
+    }
+
+    private async copyViaClipboardApi(html: string, plainText: string): Promise<boolean> {
+        const clipboard = navigator.clipboard;
+        const canUseClipboardItem = typeof ClipboardItem !== 'undefined';
+
+        if (!clipboard || !canUseClipboardItem || !window.isSecureContext) {
+            return false;
+        }
+
+        try {
+            if (document.hasFocus && !document.hasFocus()) {
+                window.focus();
+                await new Promise(resolve => setTimeout(resolve, 120));
+            }
+
+            await clipboard.write([
+                new ClipboardItem({
+                    'text/html': new Blob([html], { type: 'text/html' }),
+                    'text/plain': new Blob([plainText], { type: 'text/plain' }),
+                }),
+            ]);
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    private copyViaExecCommand(html: string, plainText: string): boolean {
+        try {
+            const selection = window.getSelection();
+            if (!selection) return false;
+
+            const container = document.createElement('div');
+            container.innerHTML = html;
+            container.contentEditable = 'true';
+            container.style.position = 'fixed';
+            container.style.left = '-9999px';
+            container.style.top = '0';
+            container.style.opacity = '0';
+            container.style.pointerEvents = 'none';
+            container.style.userSelect = 'text';
+
+            document.body.appendChild(container);
+
+            const range = document.createRange();
+            range.selectNodeContents(container);
+            selection.removeAllRanges();
+            selection.addRange(range);
+
+            (container as any).focus?.();
+
+            let successful = document.execCommand('copy');
+
+            selection.removeAllRanges();
+            document.body.removeChild(container);
+
+            if (successful) return true;
+
+            const textarea = document.createElement('textarea');
+            textarea.value = plainText;
+            textarea.style.position = 'fixed';
+            textarea.style.left = '-9999px';
+            textarea.style.top = '0';
+            textarea.style.opacity = '0';
+            textarea.style.pointerEvents = 'none';
+
+            document.body.appendChild(textarea);
+            textarea.select();
+            textarea.setSelectionRange(0, textarea.value.length);
+            successful = document.execCommand('copy');
+            document.body.removeChild(textarea);
+
+            return successful;
+        } catch {
+            return false;
+        }
     }
 }
 

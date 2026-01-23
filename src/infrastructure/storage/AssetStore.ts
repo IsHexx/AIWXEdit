@@ -7,6 +7,7 @@
 
 import type { App, PluginManifest } from 'obsidian';
 import { Notice } from 'obsidian';
+import { getBuiltinThemeCss } from '../css/builtinThemes';
 
 /**
  * Theme definition
@@ -157,7 +158,14 @@ export class AssetStore {
      */
     getThemeCSS(id: string): string {
         const theme = this.themes.get(id);
-        return theme?.css || this.getDefaultThemeCSS();
+        if (theme?.css) {
+            return theme.css;
+        }
+        const builtin = getBuiltinThemeCss(id);
+        if (builtin) {
+            return builtin;
+        }
+        return this.getDefaultThemeCSS();
     }
 
     /**

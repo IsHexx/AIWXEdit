@@ -5,7 +5,7 @@
  * Combines markdown parsing, plugin processing, and style injection.
  */
 
-import type { App, TFile, FrontMatterCache } from 'obsidian';
+import { App, TFile, FrontMatterCache } from 'obsidian';
 import type { ArticleMetadata, ParsedArticle, RenderOptions as ArticleRenderOptions } from '../../types/article.types';
 import { getMarkdownEngine, MarkdownEngine } from '../../infrastructure/markdown/MarkdownEngine';
 import { CodeBlockPlugin, CalloutPlugin, HeadingPlugin, LinkPlugin } from '../../infrastructure/markdown/plugins';
@@ -99,9 +99,12 @@ export class ArticleTransformer {
 
         // Strip frontmatter
         const markdownContent = rawContent.replace(FRONTMATTER_REGEX, '').trim();
+        const normalizedMarkdown = this.normalizeObsidianImageEmbeds(markdownContent, file);
 
         // Transform to HTML
-        const { htmlContent, styledHtmlContent } = this.transform(markdownContent);
+        let { htmlContent, styledHtmlContent } = this.transform(normalizedMarkdown);
+        htmlContent = this.processImageSources(htmlContent, file);
+        styledHtmlContent = this.processImageSources(styledHtmlContent, file);
 
         return {
             sourceFile: file,
@@ -234,6 +237,141 @@ export class ArticleTransformer {
         if (options.fontSize) {
             this.currentStyles.fontSize = options.fontSize;
         }
+    }
+
+    private normalizeObsidianImageEmbeds(markdown: string, sourceFile: TFile | null): string {
+        if (!markdown || !this.app) return markdown;
+
+        const resolvePath = (rawPath: string): string => {
+            const cleaned = rawPath.trim();
+            if (!cleaned) return cleaned;
+
+            if (cleaned.startsWith('/')) {
+                return cleaned.slice(1);
+            }
+
+            const target = this.app?.metadataCache.getFirstLinkpathDest(cleaned, sourceFile?.path || '');
+            if (target) {
+                return target.path;
+            }
+
+            return cleaned;
+        };
+
+        const escapeAttr = (value: string): string => {
+            return value
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        };
+
+        return markdown.replace(/!\[\[([^\]]+)\]\]/g, (_match, raw) => {
+            const parts = String(raw).split('|').map(part => part.trim()).filter(Boolean);
+            if (parts.length === 0) return _match;
+
+            const pathPart = parts[0];
+            let width: string | undefined;
+            let height: string | undefined;
+
+            for (const part of parts.slice(1)) {
+                const sizeMatch = part.toLowerCase().match(/^(\d+)(x(\d+))?$/);
+                if (sizeMatch) {
+                    width = sizeMatch[1];
+                    if (sizeMatch[3]) height = sizeMatch[3];
+                    break;
+                }
+            }
+
+            const resolved = resolvePath(pathPart);
+            const attrs: string[] = [`src="${escapeAttr(resolved)}"`, `alt="${escapeAttr(pathPart)}"`];
+            if (width) attrs.push(`width="${width}"`);
+            if (height) attrs.push(`height="${height}"`);
+
+            return `<img ${attrs.join(' ')} />`;
+        });
+    }
+
+    private processImageSources(html: string, sourceFile: TFile | null): string {
+        if (!html || !this.app || typeof document === 'undefined') return html;
+
+        const doc = document.implementation.createHTMLDocument('wdwxedit-image-src');
+        const container = doc.createElement('div');
+        container.innerHTML = html;
+        doc.body.appendChild(container);
+
+        const images = Array.from(container.querySelectorAll('img'));
+        for (const img of images) {
+            const src = img.getAttribute('src') || '';
+            if (!src) continue;
+            if (
+                src.startsWith('http://') ||
+                src.startsWith('https://') ||
+                src.startsWith('data:') ||
+                src.startsWith('blob:') ||
+                src.startsWith('mmbiz')
+            ) {
+                continue;
+            }
+
+            const resolved = this.resolveImagePath(src, sourceFile);
+            if (!resolved) continue;
+            const imageFile = this.app.vault.getAbstractFileByPath(resolved);
+            if (!imageFile || !(imageFile instanceof TFile)) {
+                continue;
+            }
+
+            const vaultPath = imageFile.path;
+            img.setAttribute('data-vault-path', vaultPath);
+
+            const resourcePath = this.app.vault.getResourcePath(imageFile);
+            if (resourcePath) {
+                img.setAttribute('src', resourcePath);
+            }
+        }
+
+        return container.innerHTML;
+    }
+
+    private resolveImagePath(src: string, sourceFile: TFile | null): string | null {
+        if (!this.app) return null;
+
+        const tryResolve = (candidate: string): string | null => {
+            const cleaned = candidate.trim();
+            if (!cleaned) return null;
+            const direct = cleaned.startsWith('/') ? cleaned.slice(1) : cleaned;
+            const byPath = this.app?.vault.getAbstractFileByPath(direct);
+            if (byPath && byPath instanceof TFile) {
+                return byPath.path;
+            }
+            if (sourceFile) {
+                const dest = this.app?.metadataCache.getFirstLinkpathDest(cleaned, sourceFile.path);
+                if (dest) return dest.path;
+            }
+            if (sourceFile && !cleaned.startsWith('/')) {
+                const base = sourceFile.parent?.path || '';
+                const rel = base ? `${base}/${cleaned}` : cleaned;
+                const relFile = this.app?.vault.getAbstractFileByPath(rel);
+                if (relFile && relFile instanceof TFile) {
+                    return relFile.path;
+                }
+            }
+            return null;
+        };
+
+        const resolved = tryResolve(src);
+        if (resolved) return resolved;
+
+        try {
+            const decoded = decodeURIComponent(src);
+            if (decoded !== src) {
+                return tryResolve(decoded);
+            }
+        } catch {
+            // ignore decode errors
+        }
+
+        return null;
     }
 
     /**

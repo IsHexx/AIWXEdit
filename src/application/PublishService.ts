@@ -102,7 +102,7 @@ export class PublishService {
             const coverPath = options.coverPath || article.metadata.cover;
 
             if (!coverMediaId && coverPath) {
-                const coverUpload = await this.uploadLocalImage(coverPath, client, article.sourceFile);
+                const coverUpload = await this.uploadLocalImage(coverPath, client, article.sourceFile, 'image');
                 if (!coverUpload.success || !coverUpload.mediaId) {
                     if (firstMediaId) {
                         coverMediaId = firstMediaId;
@@ -125,7 +125,7 @@ export class PublishService {
             }
 
             if (!coverMediaId && account.defaultCoverPath) {
-                const coverUpload = await this.uploadLocalImage(account.defaultCoverPath, client, null);
+                const coverUpload = await this.uploadLocalImage(account.defaultCoverPath, client, null, 'image');
                 if (!coverUpload.success || !coverUpload.mediaId) {
                     if (firstMediaId) {
                         coverMediaId = firstMediaId;
@@ -191,36 +191,46 @@ export class PublishService {
         let firstMediaId: string | undefined;
 
         // Skip if no source file (cannot resolve relative paths)
-        if (!article.sourceFile) {
+        if (!article.sourceFile || typeof document === 'undefined') {
             return { content, uploadedCount };
         }
 
-        // Find all local images in content
-        const imageRegex = /<img[^>]+src="([^"]+)"[^>]*>/g;
-        const matches = [...content.matchAll(imageRegex)];
+        const doc = document.implementation.createHTMLDocument('wdwxedit-upload-images');
+        const container = doc.createElement('div');
+        container.innerHTML = content;
+        doc.body.appendChild(container);
 
-        for (const match of matches) {
-            const src = match[1];
+        const images = Array.from(container.querySelectorAll('img'));
+        for (const img of images) {
+            const src = img.getAttribute('src') || '';
+            const vaultPathAttr = img.getAttribute('data-vault-path') || '';
 
-            // Skip already uploaded (WeChat URLs) and external URLs
             if (src.startsWith('http://mmbiz') || src.startsWith('https://mmbiz')) {
                 continue;
             }
 
-            // Handle local/relative paths
-            if (!src.startsWith('http://') && !src.startsWith('https://') && !src.startsWith('data:')) {
-                const uploadResult = await this.uploadLocalImage(src, client, article.sourceFile);
+            if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('data:')) {
+                continue;
+            }
 
-                if (uploadResult.success && uploadResult.url) {
-                    content = content.replace(src, uploadResult.url);
-                    uploadedCount++;
-                    if (!firstMediaId && uploadResult.mediaId) {
-                        firstMediaId = uploadResult.mediaId;
-                    }
+            let localPath = vaultPathAttr || src;
+            if (localPath && !localPath.startsWith('/')) {
+                localPath = `/${localPath}`;
+            }
+
+            if (!localPath) continue;
+
+            const uploadResult = await this.uploadLocalImage(localPath, client, article.sourceFile, 'article_image');
+            if (uploadResult.success && uploadResult.url) {
+                img.setAttribute('src', uploadResult.url);
+                uploadedCount++;
+                if (!firstMediaId && uploadResult.mediaId) {
+                    firstMediaId = uploadResult.mediaId;
                 }
             }
         }
 
+        content = container.innerHTML;
         return { content, uploadedCount, firstMediaId };
     }
 
@@ -230,7 +240,8 @@ export class PublishService {
     private async uploadLocalImage(
         imagePath: string,
         client: WechatClient,
-        sourceFile: TFile | null
+        sourceFile: TFile | null,
+        type: 'image' | 'temp_image' | 'article_image' = 'image'
     ): Promise<ImageUploadResult> {
         if (!this.app) {
             return { success: false, error: 'App not initialized' };
@@ -250,7 +261,7 @@ export class PublishService {
             const blob = new Blob([buffer], { type: this.getMimeType(imageFile.name) });
 
             // Upload
-            return await client.uploadImage(blob, imageFile.name, 'image');
+            return await client.uploadImage(blob, imageFile.name, type);
         } catch (error) {
             return {
                 success: false,

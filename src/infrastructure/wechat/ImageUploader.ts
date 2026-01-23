@@ -11,7 +11,7 @@ import type { ImageUploadResult, WechatAPIError } from '../../types/wechat.types
 /**
  * Material type for upload
  */
-export type MaterialType = 'image' | 'temp_image';
+export type MaterialType = 'image' | 'temp_image' | 'article_image';
 
 /**
  * Image Uploader
@@ -68,7 +68,7 @@ export class ImageUploader {
             return {
                 success: true,
                 mediaId: result.media_id,
-                url: result.url,
+                url: result.url || this.buildFallbackUrl(result.media_id),
             };
         } catch (error) {
             return {
@@ -95,6 +95,10 @@ export class ImageUploader {
      * Get upload URL based on material type
      */
     private getUploadUrl(type: MaterialType): string {
+        if (type === 'article_image') {
+            // Article content image upload
+            return `https://api.weixin.qq.com/cgi-bin/media/uploadimg?access_token=${this.accessToken}`;
+        }
         if (type === 'temp_image') {
             // Temporary media (valid for 3 days)
             return `https://api.weixin.qq.com/cgi-bin/media/upload?access_token=${this.accessToken}&type=image`;
@@ -141,6 +145,12 @@ export class ImageUploader {
         view.set(footerBytes, headerBytes.length + bodyBytes.length);
 
         return { buffer, contentType };
+    }
+
+    private buildFallbackUrl(mediaId?: string): string | undefined {
+        if (!mediaId) return undefined;
+        // WeChat image CDN fallback (consistent with v4 behavior)
+        return `https://mmbiz.qlogo.cn/mmbiz_png/${mediaId}/0?wx_fmt=png`;
     }
 }
 

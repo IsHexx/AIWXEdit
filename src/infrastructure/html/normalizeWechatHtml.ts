@@ -22,6 +22,20 @@ export function normalizeWechatHtml(html: string): string {
         }
     });
 
+    // Remove whitespace-only text nodes between list items to avoid WeChat inserting empty <li>.
+    const lists = container.querySelectorAll('ul,ol');
+    lists.forEach(list => {
+        const nodes = Array.from(list.childNodes);
+        nodes.forEach(node => {
+            if (node.nodeType === Node.TEXT_NODE) {
+                const value = node.textContent || '';
+                if (value.trim().length === 0) {
+                    node.remove();
+                }
+            }
+        });
+    });
+
     return container.innerHTML;
 }
 
