@@ -1,0 +1,32 @@
+{
+    "name": "wdwxedit-v5",
+    "version": "1.0.0",
+    "description": "Obsidian plugin for publishing notes to WeChat Official Account",
+    "main": "main.js",
+    "scripts": {
+        "dev": "node esbuild.config.mjs",
+        "build": "tsc --noEmit -skipLibCheck && node esbuild.config.mjs production",
+        "typecheck": "tsc --noEmit"
+    },
+    "keywords": [
+        "obsidian",
+        "wechat",
+        "publishing"
+    ],
+    "author": "IsHexx",
+    "license": "MIT",
+    "devDependencies": {
+        "@types/node": "^20.0.0",
+        "builtin-modules": "^3.3.0",
+        "esbuild": "^0.20.0",
+        "obsidian": "latest",
+        "tslib": "^2.6.0",
+        "typescript": "^5.3.0"
+    },
+    "dependencies": {
+        "highlight.js": "^11.9.0",
+        "html-to-image": "^1.11.11",
+        "marked": "^12.0.1",
+        "marked-highlight": "^2.1.3"
+    }
+}
