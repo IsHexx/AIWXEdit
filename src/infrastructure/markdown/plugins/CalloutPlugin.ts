@@ -144,7 +144,7 @@ export class CalloutPlugin extends BaseMarkdownPlugin {
         const title = customTitle || config.title;
 
         return `
-<section class="callout callout-${type}" style="margin: 1em 0; padding: 16px; border-radius: 8px; background-color: ${config.backgroundColor}; border-left: 4px solid ${config.color};">
+<section class="callout callout-${type}" style="margin: 0.8em 0; padding: 16px; border-radius: 8px; background-color: ${config.backgroundColor}; border-left: 4px solid ${config.color};">
     <div class="callout-title" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-weight: 600; color: ${config.color};">
         <span class="callout-icon">${config.icon}</span>
         <span>${title}</span>
@@ -162,7 +162,7 @@ export class CalloutPlugin extends BaseMarkdownPlugin {
 export function getCalloutCSS(): string {
     return `
 .callout {
-    margin: 1em 0;
+    margin: 0.8em 0;
     padding: 16px;
     border-radius: 8px;
     border-left: 4px solid;

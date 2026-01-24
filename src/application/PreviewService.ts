@@ -238,6 +238,8 @@ export class PreviewService {
 
             // Wrap everything into a clean <section> root (WeChat paste tends to keep it more consistently than div wrappers).
             const wrapper = document.createElement('section');
+            // Keep the original class so copy/selection fallbacks treat it as the article root.
+            wrapper.classList.add('wx-article');
             const wrapperStyle: string[] = [];
             if (baseFontFamily) wrapperStyle.push(`font-family: ${baseFontFamily}`);
             if (baseFontSize) wrapperStyle.push(`font-size: ${baseFontSize}`);
@@ -245,6 +247,10 @@ export class PreviewService {
             if (baseColor) wrapperStyle.push(`color: ${baseColor}`);
             if (baseTextAlign) wrapperStyle.push(`text-align: ${baseTextAlign}`);
             if (effectiveBg) wrapperStyle.push(`background-color: ${effectiveBg}`);
+            // Keep the same outer padding as the preview container (avoid multiplying padding onto children).
+            if (rootPadLeft || rootPadRight || rootPadTop || rootPadBottom) {
+                wrapperStyle.push(`padding: ${rootPadTop}px ${rootPadRight}px ${rootPadBottom}px ${rootPadLeft}px`);
+            }
             if (wrapperStyle.length > 0) wrapper.setAttribute('style', `${wrapperStyle.join('; ')};`);
 
             while (article.firstChild) {
@@ -253,6 +259,30 @@ export class PreviewService {
             article.replaceWith(wrapper);
 
             const fallbackBg = effectiveBg || 'rgb(255, 255, 255)';
+            const fallbackBgHex = this.toHexColor(this.normalizeWechatColor(fallbackBg));
+
+            const isSameBg = (a: string, b: string): boolean => {
+                const aa = this.toHexColor(this.normalizeWechatColor(a));
+                const bb = this.toHexColor(this.normalizeWechatColor(b));
+                if (aa && bb) return aa === bb;
+                return a.trim().toLowerCase() === b.trim().toLowerCase();
+            };
+
+            const hasNonPageBackgroundAncestor = (el: HTMLElement): boolean => {
+                for (let node = el.parentElement; node && node !== wrapper; node = node.parentElement) {
+                    const bg = this.normalizeWechatColor(getComputedStyle(node).backgroundColor);
+                    if (isTransparent(bg)) continue;
+                    // Any non-page background ancestor counts (e.g. callout/blockquote containers).
+                    if (!fallbackBgHex) {
+                        if (!isSameBg(bg, fallbackBg)) return true;
+                    } else {
+                        const bgHex = this.toHexColor(bg);
+                        if (bgHex && bgHex !== fallbackBgHex) return true;
+                        if (!bgHex && !isSameBg(bg, fallbackBg)) return true;
+                    }
+                }
+                return false;
+            };
 
             const blockTagNames = new Set([
                 'div', 'section', 'article',
@@ -269,66 +299,128 @@ export class PreviewService {
                 const computed = getComputedStyle(element);
 
                 if (blockTagNames.has(tag)) {
-                    const bgColor = computed.backgroundColor;
-                    if (isTransparent(bgColor)) {
+                    const isCodeLike = tag === 'pre' || tag === 'code';
+                    const inCodeSection = !!element.closest('.code-section');
+                    const display = (computed.display || '').trim().toLowerCase();
+                    // Avoid structural rewrites on layout containers (flex/grid/table), otherwise wrapping children
+                    // into an inner div can collapse columns/rows into a single stacked block after paste.
+                    const isLayoutContainer =
+                        display.includes('flex') ||
+                        display.includes('grid') ||
+                        display === 'table' ||
+                        display === 'inline-table' ||
+                        display.startsWith('table-') ||
+                        display === 'contents';
+                    const bgColor = this.normalizeWechatColor(computed.backgroundColor);
+                    const isPageBg = isTransparent(bgColor)
+                        ? false
+                        : (fallbackBgHex
+                            ? (this.toHexColor(bgColor) === fallbackBgHex)
+                            : isSameBg(bgColor, fallbackBg));
+                    const hasOwnBg = !isTransparent(bgColor);
+                    const isColoredBlock = hasOwnBg && !isPageBg;
+                    const mt = parseFloat(computed.marginTop) || 0;
+                    const mb = parseFloat(computed.marginBottom) || 0;
+                    const isLast = element.parentElement?.lastElementChild === element;
+                    const canSplitBox = tag === 'section' || tag === 'div' || tag === 'article' || tag === 'blockquote' || tag === 'pre';
+                    const hasBoxPadding = (parseFloat(computed.paddingTop) || 0) > 0
+                        || (parseFloat(computed.paddingRight) || 0) > 0
+                        || (parseFloat(computed.paddingBottom) || 0) > 0
+                        || (parseFloat(computed.paddingLeft) || 0) > 0;
+                    const hasBoxBorder = (parseFloat(computed.borderTopWidth) || 0) > 0
+                        || (parseFloat(computed.borderRightWidth) || 0) > 0
+                        || (parseFloat(computed.borderBottomWidth) || 0) > 0
+                        || (parseFloat(computed.borderLeftWidth) || 0) > 0;
+
+                    // Only fill transparent block backgrounds when they're not inside a colored block.
+                    // Otherwise, paragraphs inside callouts/quotes become white boxes.
+                    if (isTransparent(bgColor) && !hasNonPageBackgroundAncestor(element)) {
                         element.style.backgroundColor = fallbackBg;
                     }
 
-                    // WeChat does not paint backgrounds on margins. Convert vertical margins into paddings.
-                    const mt = parseFloat(computed.marginTop) || 0;
-                    const mb = parseFloat(computed.marginBottom) || 0;
-                    if (mt > 0) {
-                        const pt = parseFloat(computed.paddingTop) || 0;
-                        element.style.paddingTop = `${pt + mt}px`;
-                        element.style.marginTop = '0';
+                    // Copy-time margin normalization converts margin to padding to avoid WeChat "double margins".
+                    // If an element has its own box styling (background/border/padding), adding margin into its padding
+                    // changes the look (e.g. colored callouts eat spacing; sections with padding get inflated).
+                    // Split it into: outer (page background + spacing) + inner (original background/border/padding).
+                    const needsSplitBox = !inCodeSection
+                        && !isLayoutContainer
+                        && canSplitBox
+                        && (isColoredBlock || ((mt > 0 || (mb > 0 && isLast)) && (hasBoxPadding || hasBoxBorder)));
+                    if (needsSplitBox) {
+                        const inner = document.createElement('div');
+                        // Preserve the original box styling on the inner wrapper.
+                        inner.style.backgroundColor = bgColor;
+                        inner.style.borderTop = computed.borderTop;
+                        inner.style.borderRight = computed.borderRight;
+                        inner.style.borderBottom = computed.borderBottom;
+                        inner.style.borderLeft = computed.borderLeft;
+                        inner.style.borderRadius = computed.borderRadius;
+                        inner.style.paddingTop = computed.paddingTop;
+                        inner.style.paddingRight = computed.paddingRight;
+                        inner.style.paddingBottom = computed.paddingBottom;
+                        inner.style.paddingLeft = computed.paddingLeft;
+                        inner.style.boxSizing = 'border-box';
+
+                        while (element.firstChild) {
+                            inner.appendChild(element.firstChild);
+                        }
+                        element.appendChild(inner);
+
+                        // Make the outer element a neutral spacing container.
+                        element.style.backgroundColor = fallbackBg;
+                        element.style.border = '0';
+                        element.style.borderRadius = '0';
+                        element.style.paddingTop = '0';
+                        element.style.paddingRight = '0';
+                        element.style.paddingBottom = '0';
+                        element.style.paddingLeft = '0';
                     }
-                    if (mb > 0) {
-                        const pb = parseFloat(computed.paddingBottom) || 0;
-                        element.style.paddingBottom = `${pb + mb}px`;
-                        element.style.marginBottom = '0';
+
+                    if (!inCodeSection) {
+                        // WeChat does not paint backgrounds on margins.
+                        // Convert margin-top to padding-top to preserve spacing without margin collapse doubling.
+                        if (mt > 0) {
+                            // Note: some blocks may have had padding moved to an inner wrapper above.
+                            const pt = parseFloat(element.style.paddingTop) || parseFloat(computed.paddingTop) || 0;
+                            element.style.paddingTop = `${pt + mt}px`;
+                            element.style.marginTop = '0';
+                        }
+                        if (mb > 0) {
+                            // Keep spacing at the end of the container, otherwise rely on next element's top spacing.
+                            if (isLast) {
+                                const pb = parseFloat(element.style.paddingBottom) || parseFloat(computed.paddingBottom) || 0;
+                                element.style.paddingBottom = `${pb + mb}px`;
+                            }
+                            element.style.marginBottom = '0';
+                        }
                     }
 
                     // If the original wrapper gets stripped by WeChat, inherited typography would be lost.
                     // Pin base typography styles onto block nodes (without overriding explicit styles).
-                    const isCodeLike = tag === 'pre' || tag === 'code';
-
-                    if (!isCodeLike && baseFontFamily && (!element.style.fontFamily || isInheritLike(element.style.fontFamily))) {
+                    if (!isCodeLike && !inCodeSection && baseFontFamily && (!element.style.fontFamily || isInheritLike(element.style.fontFamily))) {
                         element.style.fontFamily = baseFontFamily;
                     }
 
                     const isHeading = tag === 'h1' || tag === 'h2' || tag === 'h3' || tag === 'h4' || tag === 'h5' || tag === 'h6';
-                    if (!isCodeLike && !isHeading && baseFontSize && (!element.style.fontSize || isInheritLike(element.style.fontSize))) {
+                    if (!isCodeLike && !inCodeSection && !isHeading && baseFontSize && (!element.style.fontSize || isInheritLike(element.style.fontSize))) {
                         element.style.fontSize = baseFontSize;
                     }
 
-                    if (!isCodeLike && !isHeading && baseLineHeight && !isInheritLike(baseLineHeight)
+                    if (!isCodeLike && !inCodeSection && !isHeading && baseLineHeight && !isInheritLike(baseLineHeight)
                         && (!element.style.lineHeight || isInheritLike(element.style.lineHeight))) {
                         element.style.lineHeight = baseLineHeight;
                     }
 
-                    if (!isCodeLike && baseTextAlign && (!element.style.textAlign || isInheritLike(element.style.textAlign))) {
+                    if (!isCodeLike && !inCodeSection && baseTextAlign && (!element.style.textAlign || isInheritLike(element.style.textAlign))) {
                         element.style.textAlign = baseTextAlign;
                     }
 
-                    if (!isCodeLike && baseColor && (!element.style.color || isInheritLike(element.style.color))) {
+                    if (!isCodeLike && !inCodeSection && baseColor && (!element.style.color || isInheritLike(element.style.color))) {
                         element.style.color = baseColor;
                     }
                 }
 
-                // Preserve root padding even if the wrapper gets unwrapped by the WeChat editor.
-                if (element.parentElement === wrapper && (rootPadLeft || rootPadRight || rootPadTop || rootPadBottom)) {
-                    const pl = parseFloat(computed.paddingLeft) || 0;
-                    const pr = parseFloat(computed.paddingRight) || 0;
-                    const pt = parseFloat(computed.paddingTop) || 0;
-                    const pb = parseFloat(computed.paddingBottom) || 0;
-                    if (rootPadLeft) element.style.paddingLeft = `${pl + rootPadLeft}px`;
-                    if (rootPadRight) element.style.paddingRight = `${pr + rootPadRight}px`;
-                    if (rootPadTop) element.style.paddingTop = `${pt + rootPadTop}px`;
-                    if (rootPadBottom) element.style.paddingBottom = `${pb + rootPadBottom}px`;
-                }
             }
-
-            wrapper.style.padding = '0';
 
             return wrapper.outerHTML;
         } catch {

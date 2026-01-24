@@ -84,7 +84,7 @@ export class HeadingPlugin extends BaseMarkdownPlugin {
      * Get inline styles for heading level
      */
     private getHeadingStyles(level: number): string {
-        const baseStyles = 'margin-top: 1.5em; margin-bottom: 0.5em; font-weight: 600; color: #1a1a1a;';
+        const baseStyles = 'margin-top: 1.2em; margin-bottom: 0.4em; font-weight: 600; color: #1a1a1a;';
 
         const sizeStyles: Record<number, string> = {
             1: 'font-size: 1.8em;',

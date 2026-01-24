@@ -365,7 +365,7 @@ export class AssetStore {
 .wx-article {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     font-size: 16px;
-    line-height: 1.8;
+    line-height: 1.6;
     color: #333;
     padding: 20px;
 }
@@ -373,8 +373,8 @@ export class AssetStore {
 .wx-article h1, .wx-article h2, .wx-article h3, 
 .wx-article h4, .wx-article h5, .wx-article h6 {
     color: #1a1a1a;
-    margin-top: 1.5em;
-    margin-bottom: 0.5em;
+    margin-top: 1.2em;
+    margin-bottom: 0.4em;
     font-weight: 600;
 }
 
@@ -384,7 +384,7 @@ export class AssetStore {
 .wx-article h4 { font-size: 1.1em; }
 
 .wx-article p {
-    margin: 1em 0;
+    margin: 0.6em 0;
 }
 
 .wx-article a {
@@ -393,7 +393,7 @@ export class AssetStore {
 }
 
 .wx-article blockquote {
-    margin: 1em 0;
+    margin: 0.8em 0;
     padding: 10px 20px;
     border-left: 4px solid #1a73e8;
     background-color: #f8f9fa;
@@ -413,7 +413,7 @@ export class AssetStore {
     border-radius: 6px;
     padding: 16px;
     overflow-x: auto;
-    margin: 1em 0;
+    margin: 0.8em 0;
 }
 
 .wx-article pre code {
@@ -424,22 +424,22 @@ export class AssetStore {
 .wx-article img {
     max-width: 100%;
     height: auto;
-    margin: 1em 0;
+    margin: 0.6em 0;
 }
 
 .wx-article ul, .wx-article ol {
-    margin: 1em 0;
+    margin: 0.6em 0;
     padding-left: 2em;
 }
 
 .wx-article li {
-    margin: 0.5em 0;
+    margin: 0.3em 0;
 }
 
 .wx-article table {
     border-collapse: collapse;
     width: 100%;
-    margin: 1em 0;
+    margin: 0.6em 0;
 }
 
 .wx-article th, .wx-article td {
@@ -456,7 +456,7 @@ export class AssetStore {
 .wx-article hr {
     border: none;
     border-top: 1px solid #eee;
-    margin: 2em 0;
+    margin: 1.2em 0;
 }
         `.trim();
     }

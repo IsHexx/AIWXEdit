@@ -17,32 +17,32 @@ export interface StyleMap {
  */
 const DEFAULT_STYLES: StyleMap = {
     // Typography
-    'p': 'margin: 1em 0; line-height: 1.8;',
+    'p': 'margin: 0.6em 0; line-height: 1.6;',
     'strong': 'font-weight: 600;',
     'em': 'font-style: italic;',
     'del': 'text-decoration: line-through; color: #57606a;',
 
     // Lists
-    'ul': 'margin: 1em 0; padding-left: 2em;',
-    'ol': 'margin: 1em 0; padding-left: 2em;',
-    'li': 'margin: 0.5em 0; line-height: 1.6;',
+    'ul': 'margin: 0.6em 0; padding-left: 2em;',
+    'ol': 'margin: 0.6em 0; padding-left: 2em;',
+    'li': 'margin: 0.3em 0; line-height: 1.6;',
 
     // Blockquote
-    'blockquote': 'margin: 1em 0; padding: 10px 20px; border-left: 4px solid #1a73e8; background-color: #f8f9fa; color: #57606a;',
+    'blockquote': 'margin: 0.8em 0; padding: 10px 20px; border-left: 4px solid #1a73e8; background-color: #f8f9fa; color: #57606a;',
 
     // Code (inline)
     'code': 'font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; font-size: 0.9em; padding: 2px 6px; background-color: #f5f5f5; border-radius: 3px;',
 
     // Table
-    'table': 'border-collapse: collapse; width: 100%; margin: 1em 0;',
+    'table': 'border-collapse: collapse; width: 100%; margin: 0.6em 0;',
     'th': 'border: 1px solid #ddd; padding: 8px 12px; text-align: left; background-color: #f6f8fa; font-weight: 600;',
     'td': 'border: 1px solid #ddd; padding: 8px 12px; text-align: left;',
 
     // Horizontal rule
-    'hr': 'border: none; border-top: 1px solid #eee; margin: 2em 0;',
+    'hr': 'border: none; border-top: 1px solid #eee; margin: 1.2em 0;',
 
     // Images
-    'img': 'max-width: 100%; height: auto; margin: 1em 0; display: block;',
+    'img': 'max-width: 100%; height: auto; margin: 0.6em 0; display: block;',
 };
 
 /**
@@ -168,7 +168,7 @@ export class InlineStyleRenderer {
     setPrimaryColor(color: string): void {
         // Update styles that use primary color
         this.styles['a'] = `color: ${color}; text-decoration: none;`;
-        this.styles['blockquote'] = `margin: 1em 0; padding: 10px 20px; border-left: 4px solid ${color}; background-color: #f8f9fa; color: #57606a;`;
+        this.styles['blockquote'] = `margin: 0.8em 0; padding: 10px 20px; border-left: 4px solid ${color}; background-color: #f8f9fa; color: #57606a;`;
         this.styles['h1'] = `color: ${color};`;
         this.styles['h2'] = `color: ${color};`;
         this.styles['h3'] = `color: ${color};`;
@@ -245,7 +245,7 @@ export class InlineStyleRenderer {
         const baseStyle = [
             `font-family: ${options.fontFamily || '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'}`,
             `font-size: ${options.fontSize || '16px'}`,
-            'line-height: 1.8',
+            'line-height: 1.6',
             'color: #333',
             'padding: 20px',
         ].join('; ');

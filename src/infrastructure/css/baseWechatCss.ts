@@ -8,13 +8,13 @@ export const BASE_WECHAT_CSS = `
 .wx-article {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-size: 16px;
-  line-height: 1.8;
+  line-height: 1.6;
   color: #333;
   padding: 20px;
 }
 
 .wx-article p {
-  margin: 1em 0;
+  margin: 0.6em 0;
 }
 
 .wx-article strong { font-weight: 600; }
@@ -25,12 +25,12 @@ export const BASE_WECHAT_CSS = `
 
 .wx-article ul,
 .wx-article ol {
-  margin: 1em 0;
+  margin: 0.6em 0;
   padding-left: 2em;
 }
 
 .wx-article li {
-  margin: 0.35em 0;
+  margin: 0.3em 0;
   line-height: 1.6;
 }
 
@@ -39,7 +39,7 @@ export const BASE_WECHAT_CSS = `
 }
 
 .wx-article blockquote {
-  margin: 1em 0;
+  margin: 0.8em 0;
   padding: 10px 20px;
   border-left: 4px solid #1a73e8;
   background-color: #f8f9fa;
@@ -49,14 +49,14 @@ export const BASE_WECHAT_CSS = `
 .wx-article img {
   max-width: 100%;
   height: auto;
-  margin: 1em 0;
+  margin: 0.6em 0;
   display: block;
 }
 
 .wx-article table {
   border-collapse: collapse;
   width: 100%;
-  margin: 1em 0;
+  margin: 0.6em 0;
 }
 
 .wx-article th,
@@ -74,13 +74,14 @@ export const BASE_WECHAT_CSS = `
 .wx-article hr {
   border: none;
   border-top: 1px solid #eee;
-  margin: 2em 0;
+  margin: 1.2em 0;
 }
 
 /* Inline code */
 .wx-article code {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-  font-size: 2em;
+  font-size: 0.9em;
+  padding: 2px 6px;
 
   background-color: #f5f5f5;
   border-radius: 3px;
@@ -96,7 +97,7 @@ export const BASE_WECHAT_CSS = `
   box-sizing: border-box;
   max-width: 100%;
   border-radius: 0;
-  margin: 0.8em 0;
+  margin: 0.6em 0;
   padding: 4px 10px 4px 5px;
   /* Fallback: if WeChat strips overflow styles on <pre>, keep the content clipped and scrollable. */
   overflow-x: auto;

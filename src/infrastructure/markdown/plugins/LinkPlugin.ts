@@ -147,12 +147,12 @@ export class LinkPlugin extends BaseMarkdownPlugin {
 
         const items = this.footnotes.map((fn, i) => {
             const num = i + 1;
-            return `<li style="font-size: 0.9em; color: #57606a; margin: 4px 0;"><span style="color: #1a73e8;">[${num}]</span> ${fn.text}: <span style="word-break: break-all;">${fn.href}</span></li>`;
+            return `<li style="font-size: 0.9em; color: #57606a; margin: 3px 0;"><span style="color: #1a73e8;">[${num}]</span> ${fn.text}: <span style="word-break: break-all;">${fn.href}</span></li>`;
         }).join('\n');
 
         return `
-<section class="footnotes" style="margin-top: 2em; padding-top: 1em; border-top: 1px solid #eee;">
-    <p style="font-weight: 600; margin-bottom: 0.5em;">参考链接</p>
+<section class="footnotes" style="margin-top: 1.2em; padding-top: 0.8em; border-top: 1px solid #eee;">
+    <p style="font-weight: 600; margin-bottom: 0.4em;">参考链接</p>
     <ol style="padding-left: 1.5em; margin: 0;">${items}</ol>
 </section>`.trim();
     }

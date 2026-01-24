@@ -95,7 +95,8 @@ export class PublishService {
             const client = getWechatClient(account.appId, account.appSecret);
 
             // Upload images from content
-            const { content, uploadedCount, firstMediaId } = await this.processImages(article, client);
+            const { content: contentWithImages, uploadedCount, firstMediaId } = await this.processImages(article, client);
+            const content = this.wrapWechatBackgroundForPublish(contentWithImages);
 
             // Ensure cover image
             let coverMediaId = options.thumbMediaId || '';
@@ -232,6 +233,107 @@ export class PublishService {
 
         content = container.innerHTML;
         return { content, uploadedCount, firstMediaId };
+    }
+
+    /**
+     * The WeChat draft API may strip `background(-color)` styles on generic containers.
+     * Wrapping the whole article in a table cell with `bgcolor` is significantly more resilient.
+     */
+    private wrapWechatBackgroundForPublish(html: string): string {
+        if (!html || typeof document === 'undefined') return html;
+
+        const doc = document.implementation.createHTMLDocument('wdwxedit-publish-bg');
+        const container = doc.createElement('div');
+        container.innerHTML = html;
+        doc.body.appendChild(container);
+
+        const root = container.querySelector<HTMLElement>('.wx-article') as HTMLElement | null;
+        if (!root) return html;
+
+        const bg = this.normalizeWechatColor(root.style.backgroundColor || '');
+        if (!bg || this.isTransparent(bg)) {
+            return container.innerHTML;
+        }
+
+        const bgHex = this.toHexColor(bg);
+
+        const table = doc.createElement('table');
+        table.setAttribute('width', '100%');
+        table.setAttribute('cellpadding', '0');
+        table.setAttribute('cellspacing', '0');
+        table.setAttribute('border', '0');
+        table.style.borderCollapse = 'collapse';
+        table.style.width = '100%';
+
+        const tbody = doc.createElement('tbody');
+        const tr = doc.createElement('tr');
+        const td = doc.createElement('td');
+
+        if (bgHex) td.setAttribute('bgcolor', bgHex);
+        td.style.backgroundColor = bg;
+
+        // Keep the original root (with all inlined typography/layout), but add a robust background behind it.
+        td.appendChild(root);
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        table.appendChild(tbody);
+
+        container.innerHTML = '';
+        container.appendChild(table);
+        return container.innerHTML;
+    }
+
+    private isTransparent(color: string): boolean {
+        const v = color.trim().toLowerCase();
+        return v === '' || v === 'transparent' || v === 'rgba(0, 0, 0, 0)';
+    }
+
+    private normalizeWechatColor(color: string): string {
+        const rgbaMatch = color.match(
+            /^rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(0|1|0?\.\d+)\s*\)$/i
+        );
+        if (!rgbaMatch) {
+            return color;
+        }
+
+        const r = Math.min(255, Math.max(0, Number(rgbaMatch[1])));
+        const g = Math.min(255, Math.max(0, Number(rgbaMatch[2])));
+        const b = Math.min(255, Math.max(0, Number(rgbaMatch[3])));
+        const a = Math.min(1, Math.max(0, Number(rgbaMatch[4])));
+
+        if (a <= 0) {
+            return 'transparent';
+        }
+
+        // Assume white backdrop and flatten alpha to solid rgb for WeChat compatibility.
+        const rr = Math.round((1 - a) * 255 + a * r);
+        const gg = Math.round((1 - a) * 255 + a * g);
+        const bb = Math.round((1 - a) * 255 + a * b);
+
+        return `rgb(${rr}, ${gg}, ${bb})`;
+    }
+
+    private toHexColor(color: string): string | null {
+        if (!color) return null;
+
+        const hexMatch = color.trim().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+        if (hexMatch) {
+            const hex = hexMatch[1].toLowerCase();
+            if (hex.length === 3) {
+                return `#${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`;
+            }
+            return `#${hex}`;
+        }
+
+        const rgbMatch = color.trim().match(/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i);
+        if (!rgbMatch) return null;
+
+        const r = Math.min(255, Math.max(0, Number(rgbMatch[1])));
+        const g = Math.min(255, Math.max(0, Number(rgbMatch[2])));
+        const b = Math.min(255, Math.max(0, Number(rgbMatch[3])));
+        const toHex2 = (v: number) => v.toString(16).padStart(2, '0');
+
+        return `#${toHex2(r)}${toHex2(g)}${toHex2(b)}`;
     }
 
     /**

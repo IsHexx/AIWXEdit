@@ -84,16 +84,26 @@ export function postProcessInlinedWechatHtml(html: string): string {
     container.innerHTML = html;
     doc.body.appendChild(container);
 
-    // WeChat sometimes drops `background` shorthand on pasted elements. Ensure root uses background-color.
-    const article = container.querySelector<HTMLElement>('.wx-article');
-    if (article) {
-        const inline = article.getAttribute('style') || '';
+    const isTransparent = (value: string) =>
+        !value || value === 'transparent' || value === 'rgba(0, 0, 0, 0)';
+
+    // WeChat sometimes drops `background` shorthand even in published content.
+    // Promote `background: <color>` to `background-color: <color>` when possible.
+    const maybePromoteBackgroundColor = (el: HTMLElement) => {
+        const inline = el.getAttribute('style') || '';
+        const hasBg = /(?:^|;)\s*background\s*:/i.test(inline);
         const hasBgColor = /(?:^|;)\s*background-color\s*:/i.test(inline);
-        const bgMatch = inline.match(/(?:^|;)\s*background\s*:\s*([^;]+)\s*(?:;|$)/i);
-        if (!hasBgColor && bgMatch && bgMatch[1]) {
-            article.style.setProperty('background-color', bgMatch[1].trim());
+        if (!hasBg || hasBgColor) return;
+
+        // If background shorthand includes a color, the CSS parser exposes it via `style.backgroundColor`.
+        const bgColor = el.style.backgroundColor || '';
+        if (!isTransparent(bgColor)) {
+            el.style.setProperty('background-color', bgColor);
         }
-    }
+    };
+
+    const allStyled = container.querySelectorAll<HTMLElement>('[style]');
+    allStyled.forEach(el => maybePromoteBackgroundColor(el));
 
     const codeScopes = container.querySelectorAll('.code-section');
     codeScopes.forEach(scope => {
