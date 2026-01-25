@@ -103,6 +103,7 @@ export interface StyleEditorEvents {
     onFontChanged?: (font: string) => void;
     onFontSizeChanged?: (size: string) => void;
     onPrimaryColorChanged?: (color: string) => void;
+    onCustomCSSChanged?: (css: string) => void;
     onStyleReset?: () => void;
 }
 
@@ -136,10 +137,14 @@ export class StyleEditor {
      */
     render(): void {
         this.container.empty();
-        this.container.addClass('style-editor');
+        // Remove direct style classes like 'style-editor' if they conflict, 
+        // but our CSS uses .wdwxedit-style-editor-container > children hierarchy or specific classes.
 
-        // Create row container
-        const row = this.container.createDiv({ cls: 'style-editor-row' });
+        // Content
+        const content = this.container.createDiv({ cls: 'style-editor-content' });
+
+        // Row 1: Dropdowns and Reset Button
+        const row = content.createDiv({ cls: 'style-editor-row' });
 
         // Theme selector
         this.createDropdown(row, '样式', this.themes,
@@ -168,6 +173,31 @@ export class StyleEditor {
 
         // Primary color selector
         this.createColorPicker(row);
+
+        // Reset Button (appended to the end of controls)
+        const resetBtn = row.createEl('button', {
+            text: '重置',
+            cls: 'wdwxedit-btn'
+        });
+        resetBtn.onclick = () => this.events.onStyleReset?.();
+        resetBtn.style.padding = '4px 8px';
+        resetBtn.style.height = '28px'; // Match dropdown height roughly
+        resetBtn.style.fontSize = '12px';
+        resetBtn.style.marginLeft = 'auto'; // Push to the right if space allows, or just flexible
+
+        // Row 2: Custom CSS (Conditional)
+        if (this.currentStyle.useCustomCSS) {
+            const cssRow = content.createDiv({ cls: 'style-custom-css-row' });
+            cssRow.createEl('label', { text: '自定义CSS:', cls: 'style-custom-css-label' });
+
+            const textarea = cssRow.createEl('textarea', { cls: 'style-custom-css-input' });
+            textarea.placeholder = '/* 在这里输入自定义css样式 */';
+            textarea.value = this.currentStyle.customCSS || '';
+
+            textarea.oninput = () => {
+                this.events.onCustomCSSChanged?.(textarea.value);
+            };
+        }
     }
 
     /**
@@ -216,7 +246,7 @@ export class StyleEditor {
 
         COLOR_PRESETS.forEach(color => {
             const option = select.createEl('option');
-            option.value = color.value;
+            const value = color.value;
             option.textContent = color.text;
             if (color.value === currentColor) {
                 option.selected = true;
@@ -233,6 +263,12 @@ export class StyleEditor {
         }
 
         // Color input
+        if (currentColor) {
+            // Check if active color is custom
+            // Logic handled by isPreset above
+        }
+
+        // Color input element
         const colorInput = group.createEl('input', {
             type: 'color',
             cls: 'color-input',
@@ -262,63 +298,4 @@ export class StyleEditor {
     updateStyle(style: Partial<StyleConfig>): void {
         this.currentStyle = { ...this.currentStyle, ...style };
     }
-}
-
-/**
- * Get style editor CSS
- */
-export function getStyleEditorCSS(): string {
-    return `
-.style-editor {
-    background: #f8f8f8;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 6px;
-    padding: 12px;
-    margin-bottom: 12px;
-}
-
-.style-editor-row {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
-}
-
-.style-dropdown-group {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.style-dropdown-label {
-    font-size: 13px;
-    color: var(--text-normal);
-    white-space: nowrap;
-}
-
-.style-dropdown {
-    padding: 4px 8px;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 4px;
-    background: var(--background-primary);
-    color: var(--text-normal);
-    font-size: 13px;
-    cursor: pointer;
-    min-width: 80px;
-}
-
-.style-dropdown:hover {
-    border-color: var(--interactive-accent);
-}
-
-.color-input {
-    width: 32px;
-    height: 28px;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 4px;
-    cursor: pointer;
-    padding: 2px;
-    margin-left: 4px;
-}
-    `.trim();
 }

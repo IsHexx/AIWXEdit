@@ -110,29 +110,93 @@ export class PublishView extends ItemView {
         this.dynamicStyleEl.textContent = '';
     }
 
+    private getAccounts() {
+        return getSettingsStore().getAll().accounts || [];
+    }
+
+    private getDefaultAccountIndex() {
+        return getSettingsStore().getAll().defaultAccountIndex || 0;
+    }
+
     /**
-     * Scope CSS to a container selector (best-effort).
+     * Build the refined toolbar
      */
-    private scopeCss(css: string, scope: string): string {
-        if (!css) return '';
-        const cleaned = css.replace(/\/\*[\s\S]*?\*\//g, '');
-        return cleaned.replace(/(^|})\s*([^@}{][^{]+)\{/g, (match, end, selector) => {
-            const scopedSelector = selector.split(',')
-                .map((sel: string) => {
-                    const trimmed = sel.trim();
-                    if (!trimmed) return '';
-                    if (trimmed === 'body' || trimmed === 'html' || trimmed === ':root') {
-                        return scope;
-                    }
-                    if (trimmed.startsWith(scope)) {
-                        return trimmed;
-                    }
-                    return `${scope} ${trimmed}`;
-                })
-                .filter(Boolean)
-                .join(', ');
-            return `${end}\n${scopedSelector}{`;
+    private buildToolbar(container: HTMLElement): void {
+        container.empty();
+
+        // Left Section: Account & Cover
+        const leftSection = container.createDiv({ cls: 'wdwxedit-toolbar-group' });
+
+        // Account Selector
+        const accountGroup = leftSection.createDiv({ cls: 'wdwxedit-toolbar-group' });
+        accountGroup.createEl('span', { text: '公众号:', cls: 'wdwxedit-toolbar-label' });
+
+        const accounts = this.getAccounts();
+        const accountSelect = accountGroup.createEl('select', { cls: 'wdwxedit-account-select' });
+
+        if (accounts.length === 0) {
+            accountSelect.createEl('option', { text: '未配置', value: '-1' });
+            accountSelect.disabled = true;
+        } else {
+            accounts.forEach((acc, idx) => {
+                const opt = accountSelect.createEl('option', {
+                    text: acc.name || `账号 ${idx + 1}`,
+                    value: String(idx)
+                });
+                if (idx === this.getDefaultAccountIndex()) {
+                    opt.selected = true;
+                }
+            });
+            accountSelect.onchange = async () => {
+                const idx = parseInt(accountSelect.value);
+                await getSettingsStore().update({ defaultAccountIndex: idx });
+            };
+        }
+
+        // Cover options
+        const coverGroup = leftSection.createDiv({ cls: 'wdwxedit-toolbar-group' });
+        coverGroup.createEl('span', { text: '封面:', cls: 'wdwxedit-toolbar-label' });
+
+        // Radio group
+        const coverOptions = coverGroup.createDiv({ cls: 'wdwxedit-cover-options' });
+
+        // Default radio
+        const defaultLabel = coverOptions.createEl('label', { cls: 'wdwxedit-radio-label' });
+        const defaultRadio = defaultLabel.createEl('input', { type: 'radio', attr: { name: 'cover-mode' } });
+        defaultRadio.checked = true; // Use default logic for now
+        defaultLabel.createSpan({ text: '默认' });
+
+        // Upload radio
+        const uploadLabel = coverOptions.createEl('label', { cls: 'wdwxedit-radio-label' });
+        const uploadRadio = uploadLabel.createEl('input', { type: 'radio', attr: { name: 'cover-mode' } });
+        uploadLabel.createSpan({ text: '上传' });
+
+        // Right Section: Buttons
+        const rightSection = container.createDiv({ cls: 'wdwxedit-toolbar-right' });
+
+        // Refresh button
+        const refreshBtn = rightSection.createEl('button', {
+            cls: 'wdwxedit-btn',
+            attr: { 'aria-label': '刷新预览' }
         });
+        refreshBtn.innerHTML = '🔄'; // Using emoji as icon
+        refreshBtn.addEventListener('click', () => this.refresh());
+
+        // Copy button
+        const copyBtn = rightSection.createEl('button', {
+            cls: 'wdwxedit-btn',
+            attr: { 'aria-label': '复制到剪贴板' }
+        });
+        copyBtn.innerHTML = '📋';
+        copyBtn.addEventListener('click', () => this.copyToClipboard());
+
+        // Publish button (Send)
+        const sendBtn = rightSection.createEl('button', {
+            cls: 'wdwxedit-btn',
+            attr: { 'aria-label': '发布到公众号' }
+        });
+        sendBtn.innerHTML = '📤';
+        sendBtn.addEventListener('click', () => this.publish());
     }
 
     /**
@@ -190,6 +254,26 @@ export class PublishView extends ItemView {
                 this.updateDynamicStyles();
                 await this.previewService.refresh();
             },
+            onCustomCSSChanged: async (css) => {
+                await getSettingsStore().updateStyleConfig({ customCSS: css });
+                await this.previewService.refresh();
+            },
+            onStyleReset: async () => {
+                // Reset to defaults
+                await getSettingsStore().updateStyleConfig({
+                    theme: 'default',
+                    highlight: 'github',
+                    fontFamily: '等线',
+                    fontSize: '16px',
+                    primaryColor: '#1a73e8',
+                    customCSS: ''
+                });
+                // Re-render editor
+                this.refreshStyleEditor();
+                this.updateDynamicStyles();
+                await this.previewService.refresh();
+                new Notice('样式已重置');
+            }
         };
 
         this.styleEditor = new StyleEditor(container, events, styleConfig, {
@@ -207,28 +291,6 @@ export class PublishView extends ItemView {
         this.styleEditorContainer.empty();
         this.styleEditor = null;
         this.buildStyleEditor(this.styleEditorContainer);
-    }
-    private buildToolbar(container: HTMLElement): void {
-        // Refresh button
-        const refreshBtn = container.createEl('button', {
-            cls: 'wdwxedit-btn',
-            text: '🔄 刷新',
-        });
-        refreshBtn.addEventListener('click', () => this.refresh());
-
-        // Copy button
-        const copyBtn = container.createEl('button', {
-            cls: 'wdwxedit-btn',
-            text: '📋 复制',
-        });
-        copyBtn.addEventListener('click', () => this.copyToClipboard());
-
-        // Publish button
-        const publishBtn = container.createEl('button', {
-            cls: 'wdwxedit-btn wdwxedit-btn-primary',
-            text: '📤 发布',
-        });
-        publishBtn.addEventListener('click', () => this.publish());
     }
 
     /**

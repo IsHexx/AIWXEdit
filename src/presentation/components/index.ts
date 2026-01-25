@@ -6,7 +6,6 @@
 
 export {
     StyleEditor,
-    getStyleEditorCSS,
     BUILTIN_THEMES,
     BUILTIN_HIGHLIGHTS,
     FONT_OPTIONS,
