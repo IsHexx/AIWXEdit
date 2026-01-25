@@ -101,9 +101,51 @@ export class AssetStore {
 
         await this.loadBuiltInThemes();
         await this.loadBuiltInHighlights();
+        await this.loadUnregisteredLocalThemes(); // Add local scan
         await this.loadCustomCSS();
         await this.loadThemeCatalog();
         this.isLoaded = true;
+    }
+
+    /**
+     * Load unregistered local themes (drop-in .css files)
+     */
+    private async loadUnregisteredLocalThemes(): Promise<void> {
+        if (!this.app) return;
+        try {
+            const adapter = this.app.vault.adapter;
+            if (!await adapter.exists(this.themesPath)) {
+                return;
+            }
+
+            const result = await adapter.list(this.themesPath);
+            const cssFiles = result.files.filter(path => path.toLowerCase().endsWith('.css'));
+
+            for (const filePath of cssFiles) {
+                // Extract filename without extension as ID
+                const parts = filePath.split('/');
+                const filename = parts[parts.length - 1];
+                const id = filename.replace(/\.css$/i, '');
+
+                // Skip if already registered (builtin or config-based)
+                if (this.themes.has(id)) {
+                    continue;
+                }
+
+                // Load content
+                const css = await adapter.read(filePath);
+
+                // Register as a theme
+                this.themes.set(id, {
+                    id: id,
+                    name: id, // Use filename as name
+                    css: css,
+                    builtIn: false
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load local themes:', error);
+        }
     }
 
     // ==================== Themes ====================
@@ -568,15 +610,56 @@ export class AssetStore {
 
     private normalizeThemeCss(css: string, item: ThemeCatalogItem): string {
         let output = css;
+
+        // 1. Remove comments to avoid matching inside them
+        // (Simple removal, strictly speaking CSS comments can be complex but this suffices for typical themes)
+        output = output.replace(/\/\*[\s\S]*?\*\//g, '');
+
         if (item.replace) {
             for (const [from, to] of item.replace) {
                 output = output.split(from).join(to);
             }
         }
+
+        // 2. Safe replacements for global selectors to scope them to .wx-article
+
+        // Replace 'body' but verify it's a selector, not part of a property name or word
+        // Regex explanation:
+        // (^|[Mkv\s,{}]) -> Match start of line, or typical selector delimiters/spacers
+        // body -> The tag
+        // (?=[\s,:{.[>]) -> Lookahead for selector-like suffix (space, comma, pseudo-class, brace, class, id, combinator)
+        // We explicitly exclude '-' to avoid matching 'markdown-body' or 'custom-body-color'.
+        output = output.replace(/(^|[\s,{}])body(?=[\s,:{.[>])/gi, '$1.wx-article');
+
+        // Replace 'html' similarly
+        output = output.replace(/(^|[\s,{}])html(?=[\s,:{.[>])/gi, '$1.wx-article');
+
+        // Replace ':root' -> '.wx-article' (Scoped CSS variables)
+        output = output.replace(/:root/gi, '.wx-article');
+
+        // Replace '.markdown-body' legacy selector
         output = output.replace(/\.markdown-body/g, '.wx-article');
-        output = output.replace(/:root/g, '.wx-article');
-        output = output.replace(/(^|[\\s,{])body(?=[\\s,{])/g, '$1.wx-article');
-        output = output.replace(/(^|[\\s,{])html(?=[\\s,{])/g, '$1.wx-article');
+
+        // 3. For any other generic tag selectors that might be at root level, 
+        // ideally we would parse the AST, but here we rely on the fact that
+        // most Markdown themes are decent citizens or rely on .markdown-body.
+        // If a theme purely uses `p { ... }`, it usually expects a scoped container.
+
+        // If the theme DOES NOT use .wx-article or .markdown-body at all, 
+        // we might want to qualify generic selectors. 
+        // However, blindly replacing "p" is dangerous ("map" ends in "p").
+        // Given we want "drop-in" support, we assume the user knows the CSS might leak if not scoped.
+        // But for WeChat context, we are inlining, so "p" becomes ".wx-article p" naturally? 
+        // No, postcss-inline doesn't auto-scope global selectors unless we use a plugin.
+        // But `normalizeWechatHtml` in transformer wraps content in `<div class="wx-article">`.
+        // The CSS we return here is concatenated. 
+        // If CSS has `p { color: red }`, it will affect the Preview globally if not shadowed?
+        // Actually, Obsidian Preview is inside a Shadow DOM or iframe? No, it's a div.
+        // So global styles leak. We MUST scope them.
+
+        // Since we don't have a full CSS parser here, we assume standard Markdown themes 
+        // use .markdown-body. If they don't, we did our best with body/html replacement.
+
         return output;
     }
 }

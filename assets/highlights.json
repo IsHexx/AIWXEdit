@@ -1,0 +1,294 @@
+[
+  {
+    "name": "1c-light",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/1c-light.min.css"
+  },
+  {
+    "name": "a11y-dark",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/a11y-dark.min.css"
+  },
+  {
+    "name": "a11y-light",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/a11y-light.min.css"
+  },
+  {
+    "name": "agate",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/agate.min.css"
+  },
+  {
+    "name": "an-old-hope",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/an-old-hope.min.css"
+  },
+  {
+    "name": "androidstudio",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/androidstudio.min.css"
+  },
+  {
+    "name": "arduino-light",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/arduino-light.min.css"
+  },
+  {
+    "name": "arta",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/arta.min.css"
+  },
+  {
+    "name": "ascetic",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/ascetic.min.css"
+  },
+  {
+    "name": "atom-one-dark-reasonable",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/atom-one-dark-reasonable.min.css"
+  },
+  {
+    "name": "atom-one-dark",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/atom-one-dark.min.css"
+  },
+  {
+    "name": "atom-one-light",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/atom-one-light.min.css"
+  },
+  {
+    "name": "brown-paper",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/brown-paper.min.css"
+  },
+  {
+    "name": "codepen-embed",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/codepen-embed.min.css"
+  },
+  {
+    "name": "color-brewer",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/color-brewer.min.css"
+  },
+  {
+    "name": "dark",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/dark.min.css"
+  },
+  {
+    "name": "default",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/default.min.css"
+  },
+  {
+    "name": "devibeans",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/devibeans.min.css"
+  },
+  {
+    "name": "docco",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/docco.min.css"
+  },
+  {
+    "name": "far",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/far.min.css"
+  },
+  {
+    "name": "felipec",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/felipec.min.css"
+  },
+  {
+    "name": "foundation",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/foundation.min.css"
+  },
+  {
+    "name": "github-dark-dimmed",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/github-dark-dimmed.min.css"
+  },
+  {
+    "name": "github-dark",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/github-dark.min.css"
+  },
+  {
+    "name": "github",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/github.min.css"
+  },
+  {
+    "name": "gml",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/gml.min.css"
+  },
+  {
+    "name": "googlecode",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/googlecode.min.css"
+  },
+  {
+    "name": "gradient-dark",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/gradient-dark.min.css"
+  },
+  {
+    "name": "gradient-light",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/gradient-light.min.css"
+  },
+  {
+    "name": "grayscale",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/grayscale.min.css"
+  },
+  {
+    "name": "hybrid",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/hybrid.min.css"
+  },
+  {
+    "name": "idea",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/idea.min.css"
+  },
+  {
+    "name": "intellij-light",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/intellij-light.min.css"
+  },
+  {
+    "name": "ir-black",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/ir-black.min.css"
+  },
+  {
+    "name": "isbl-editor-dark",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/isbl-editor-dark.min.css"
+  },
+  {
+    "name": "isbl-editor-light",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/isbl-editor-light.min.css"
+  },
+  {
+    "name": "kimbie-dark",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/kimbie-dark.min.css"
+  },
+  {
+    "name": "kimbie-light",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/kimbie-light.min.css"
+  },
+  {
+    "name": "lightfair",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/lightfair.min.css"
+  },
+  {
+    "name": "lioshi",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/lioshi.min.css"
+  },
+  {
+    "name": "magula",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/magula.min.css"
+  },
+  {
+    "name": "mono-blue",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/mono-blue.min.css"
+  },
+  {
+    "name": "monokai-sublime",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/monokai-sublime.min.css"
+  },
+  {
+    "name": "monokai",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/monokai.min.css"
+  },
+  {
+    "name": "night-owl",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/night-owl.min.css"
+  },
+  {
+    "name": "nnfx-dark",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/nnfx-dark.min.css"
+  },
+  {
+    "name": "nnfx-light",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/nnfx-light.min.css"
+  },
+  {
+    "name": "nord",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/nord.min.css"
+  },
+  {
+    "name": "obsidian",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/obsidian.min.css"
+  },
+  {
+    "name": "panda-syntax-dark",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/panda-syntax-dark.min.css"
+  },
+  {
+    "name": "panda-syntax-light",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/panda-syntax-light.min.css"
+  },
+  {
+    "name": "paraiso-dark",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/paraiso-dark.min.css"
+  },
+  {
+    "name": "paraiso-light",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/paraiso-light.min.css"
+  },
+  {
+    "name": "pojoaque",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/pojoaque.min.css"
+  },
+  {
+    "name": "purebasic",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/purebasic.min.css"
+  },
+  {
+    "name": "qtcreator-dark",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/qtcreator-dark.min.css"
+  },
+  {
+    "name": "qtcreator-light",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/qtcreator-light.min.css"
+  },
+  {
+    "name": "rainbow",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/rainbow.min.css"
+  },
+  {
+    "name": "routeros",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/routeros.min.css"
+  },
+  {
+    "name": "school-book",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/school-book.min.css"
+  },
+  {
+    "name": "shades-of-purple",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/shades-of-purple.min.css"
+  },
+  {
+    "name": "srcery",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/srcery.min.css"
+  },
+  {
+    "name": "stackoverflow-dark",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/stackoverflow-dark.min.css"
+  },
+  {
+    "name": "stackoverflow-light",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/stackoverflow-light.min.css"
+  },
+  {
+    "name": "sunburst",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/sunburst.min.css"
+  },
+  {
+    "name": "tokyo-night-dark",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/tokyo-night-dark.min.css"
+  },
+  {
+    "name": "tokyo-night-light",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/tokyo-night-light.min.css"
+  },
+  {
+    "name": "tomorrow-night-blue",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/tomorrow-night-blue.min.css"
+  },
+  {
+    "name": "tomorrow-night-bright",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/tomorrow-night-bright.min.css"
+  },
+  {
+    "name": "vs",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/vs.min.css"
+  },
+  {
+    "name": "vs2015",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/vs2015.min.css"
+  },
+  {
+    "name": "xcode",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/xcode.min.css"
+  },
+  {
+    "name": "xt256",
+    "url": "https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/npm/highlightjs/11.11.1/styles/xt256.min.css"
+  }
+]

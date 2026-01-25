@@ -111,7 +111,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     defaultAccountIndex: 0,
     style: {
         theme: 'default',
-        highlight: 'github',
+        highlight: 'panda-syntax-light',
         fontFamily: 'system-ui',
         fontSize: '16px',
         primaryColor: '#1a73e8',

@@ -1,0 +1,173 @@
+.wdwxedit {
+  color: #595959;
+  font-size: 15px;
+  background-image: linear-gradient(90deg, rgba(60, 10, 30, 0.04) 3%, rgba(0, 0, 0, 0) 3%), linear-gradient(360deg, rgba(60, 10, 30, 0.04) 3%, rgba(0, 0, 0, 0) 3%);
+  background-size: 20px 20px;
+  background-position: center center;
+  padding: 1em;
+  /* 段落 */
+  /* 段落间距控制 */
+  /* 标题的通用设置 */
+  /* 一级标题 */
+  /* 二级标题 */
+  /* 三级标题 */
+  /* 无序列表 */
+  /* 无序列表内容 */
+  /* 引用 */
+  /* 引用文字 */
+  /* 链接 */
+  /* 加粗 */
+  /* 加粗斜体 */
+  /* 分隔线 */
+  /* 表格 */
+}
+.wdwxedit p {
+  color: #595959;
+  font-size: 15px;
+  line-height: 2;
+  font-weight: 400;
+}
+.wdwxedit p + p {
+  margin-top: 16px;
+}
+.wdwxedit h1,
+.wdwxedit h2,
+.wdwxedit h3,
+.wdwxedit h4,
+.wdwxedit h5,
+.wdwxedit h6 {
+  padding: 30px 0;
+  margin: 0;
+  color: #135ce0;
+  font-weight: 600;
+}
+.wdwxedit h1 {
+  position: relative;
+  text-align: center;
+  font-size: 22px;
+  margin: 50px 0;
+}
+.wdwxedit h2 {
+  position: relative;
+  font-size: 20px;
+  border-left: 4px solid;
+  padding: 0 0 0 10px;
+  margin: 30px 0;
+}
+.wdwxedit h3 {
+  font-size: 16px;
+}
+.wdwxedit ul {
+  list-style: disc outside;
+  margin-left: 2em;
+  margin-top: 1em;
+}
+.wdwxedit li {
+  line-height: 2;
+  color: #595959;
+  margin-bottom: 0;
+  list-style: inherit;
+}
+.wdwxedit img {
+  max-width: 100%;
+}
+.wdwxedit blockquote {
+  background: #fff9f9;
+  margin: 2em 0;
+  padding: 2px 20px;
+  border-left: 4px solid #b2aec5;
+}
+.wdwxedit blockquote p {
+  color: #666;
+  line-height: 2;
+}
+.wdwxedit a {
+  color: #036aca;
+  border-bottom: 1px solid rgba(3, 106, 202, 0.8);
+  font-weight: 400;
+  text-decoration: none;
+}
+.wdwxedit strong {
+  color: #036aca;
+}
+.wdwxedit em strong {
+  color: #036aca;
+}
+.wdwxedit hr {
+  border-top: 1px solid #135ce0;
+}
+.wdwxedit table {
+  border-collapse: collapse;
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+.wdwxedit table th,
+.wdwxedit table td {
+  border: 1px solid #dfe2e5;
+  padding: 0.6em 1em;
+}
+.wdwxedit table tr {
+  border-top: 1px solid #dfe2e5;
+}
+.wdwxedit table tr:nth-child(2n) {
+  background-color: #f6f8fa;
+}
+.footnotes hr {
+  margin-bottom: 0.5em;
+}
+.wdwxedit code {
+  word-break: break-word;
+  border-radius: 2px;
+  background-color: #fff5f5;
+  color: #ff502c;
+  font-size: 0.87em;
+  padding: 0.065em 0.4em;
+}
+.code-section pre code {
+  border: none;
+  background-color: transparent;
+  font-size: inherit;
+  padding: 0 !important;
+  margin: 0 !important;
+  text-wrap: nowrap;
+}
+.code-section ul li {
+  line-height: inherit;
+}
+
+/* 代码块 */
+.code-section {
+  display: flex;
+  border: solid 1px #ff502c;
+  margin: 1.5em 0;
+  line-height: 26px;
+  padding: 0.5em;
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+.code-section pre {
+  margin: 0;
+  margin-block-start: 0;
+  margin-block-end: 0;
+  white-space: normal;
+  overflow-x: auto;
+  padding: 0 0 0 1em;
+}
+.code-section code {
+  display: flex;
+  text-wrap: nowrap;
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+.code-section ul {
+  margin: 0;
+  padding: 0;
+  margin-block-start: 0;
+  margin-block-end: 0;
+  width: fit-content;
+  flex-shrink: 0;
+  height: 100%;
+  line-height: 26px;
+  list-style-type: none;
+}
+.code-section ul > li {
+  text-align: right;
+}

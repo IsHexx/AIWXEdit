@@ -216,7 +216,7 @@ export class CodeBlockPlugin extends BaseMarkdownPlugin {
         // Inline Styles Definition - Explicitly defined here
         const listStyle = 'margin:0; padding:0 8px 0 0; list-style:none; text-align:right; color:#999; border-right:1px solid #ddd; flex-shrink:0;';
         const preStyle = 'margin:0; padding:0 0 0 8px; overflow:auto; white-space:normal; flex-grow:1;';
-        const sectionStyle = 'display: flex; gap: 8px; font-size: 13px; line-height: 1.5; padding: 10px; background: #f6f8fa; border-radius: 4px; overflow-x: auto;';
+        const sectionStyle = 'display: flex; gap: 8px; font-size: 13px; line-height: 1.5; padding: 10px; border-radius: 4px; overflow-x: auto;';
 
         // Manual assembly for final structure to guarantee WeChat compatibility
         let output = `<section class="${rootClasses.join(' ')}" style="${sectionStyle}">`;

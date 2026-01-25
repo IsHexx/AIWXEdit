@@ -48,14 +48,17 @@ export const BUILTIN_THEMES: ThemeDefinition[] = [
  * Built-in highlight themes
  */
 export const BUILTIN_HIGHLIGHTS: HighlightDefinition[] = [
-    { name: 'GitHub', className: 'github' },
-    { name: 'VS Code', className: 'vs' },
-    { name: 'Atom One Light', className: 'atom-one-light' },
-    { name: 'Atom One Dark', className: 'atom-one-dark' },
+    // Pick 10 distinct highlight.js themes (mirrors md project's common list)
     { name: 'Monokai', className: 'monokai' },
-    { name: 'Dracula', className: 'dracula' },
+    { name: 'Night Owl', className: 'night-owl' },
+    { name: 'NNFX Dark', className: 'nnfx-dark' },
+    { name: 'NNFX Light', className: 'nnfx-light' },
     { name: 'Nord', className: 'nord' },
-    { name: 'Tomorrow', className: 'tomorrow' },
+    { name: 'Obsidian', className: 'obsidian' },
+    { name: 'Panda Syntax Dark', className: 'panda-syntax-dark' },
+    { name: 'Panda Syntax Light', className: 'panda-syntax-light' },
+    { name: 'Paraiso Dark', className: 'paraiso-dark' },
+    { name: 'Pojoaque', className: 'pojoaque' },
 ];
 
 /**

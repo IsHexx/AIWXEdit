@@ -199,11 +199,59 @@ export function generateHljsFallbackCss(theme: string): string {
     return `
 .hljs { color: ${c.text}; background: ${c.bg}; }
 .hljs-comment, .hljs-quote { color: ${c.comment}; font-style: italic; }
-.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-section, .hljs-link { color: ${c.keyword}; }
-.hljs-string, .hljs-title, .hljs-name, .hljs-attr, .hljs-symbol, .hljs-bullet, .hljs-addition { color: ${c.string}; }
-.hljs-number, .hljs-meta, .hljs-built_in, .hljs-builtin-name { color: ${c.number}; }
-.hljs-function, .hljs-title.function_, .hljs-selector-id, .hljs-selector-class { color: ${c.function}; }
-.hljs-variable, .hljs-template-variable, .hljs-type, .hljs-class, .hljs-subst { color: ${c.variable}; }
+
+/* Keywords / tags */
+.hljs-doctag,
+.hljs-keyword,
+.hljs-meta-keyword,
+.hljs-template-tag,
+.hljs-type,
+.hljs-selector-tag,
+.hljs-literal { color: ${c.keyword}; font-weight: 600; }
+.hljs-tag,
+.hljs-name { color: ${c.keyword}; }
+
+/* Strings / regex */
+.hljs-string,
+.hljs-regexp,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition,
+.hljs-meta-string { color: ${c.string}; }
+
+/* Numbers / meta */
+.hljs-number,
+.hljs-meta { color: ${c.number}; }
+
+/* Functions / titles */
+.hljs-function,
+.hljs-title,
+.hljs-title.function_,
+.hljs-title.class_,
+.hljs-section,
+.hljs-selector-id,
+.hljs-selector-class { color: ${c.function}; font-weight: 600; }
+
+/* Variables / attributes / properties */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-attr,
+.hljs-attribute,
+.hljs-params,
+.hljs-property,
+.hljs-selector-attr,
+.hljs-selector-pseudo { color: ${c.variable}; }
+
+/* Builtins / classes */
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-class { color: ${c.type}; }
+
+/* Misc */
+.hljs-subst { color: ${c.text}; }
+.hljs-link { color: ${c.number}; text-decoration: underline; }
 .hljs-deletion { color: ${c.keyword}; }
+.hljs-emphasis { font-style: italic; }
+.hljs-strong { font-weight: 700; }
     `.trim();
 }
