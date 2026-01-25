@@ -58,11 +58,11 @@ export class AIService {
             customPrompt: settings.titlePrompt,
         });
 
-        this.coverGenerator = new CoverGenerator(this.client, {
+        this.coverGenerator = settings.enableCover ? new CoverGenerator(this.client, {
             mode: settings.coverMethod as CoverMode || 'image',
             imageModel: settings.coverModel,
             style: 'minimal' as CoverStyle,
-        });
+        }) : null;
     }
 
     /**
@@ -99,8 +99,11 @@ export class AIService {
         title: string,
         summary: string
     ): Promise<CoverImageResult | CoverHTMLResult> {
-        if (!this.coverGenerator) {
+        if (!this.client) {
             return { success: false, error: 'AI not configured' };
+        }
+        if (!this.coverGenerator) {
+            return { success: false, error: 'Cover generation is disabled' };
         }
         return this.coverGenerator.generate(title, summary);
     }
@@ -109,8 +112,11 @@ export class AIService {
      * Generate cover as image
      */
     async generateCoverImage(title: string, summary: string): Promise<CoverImageResult> {
-        if (!this.coverGenerator) {
+        if (!this.client) {
             return { success: false, error: 'AI not configured' };
+        }
+        if (!this.coverGenerator) {
+            return { success: false, error: 'Cover generation is disabled' };
         }
         return this.coverGenerator.generateImage(title, summary);
     }
@@ -119,8 +125,11 @@ export class AIService {
      * Generate cover as HTML
      */
     async generateCoverHTML(title: string, summary: string): Promise<CoverHTMLResult> {
-        if (!this.coverGenerator) {
+        if (!this.client) {
             return { success: false, error: 'AI not configured' };
+        }
+        if (!this.coverGenerator) {
+            return { success: false, error: 'Cover generation is disabled' };
         }
         return this.coverGenerator.generateHTML(title, summary);
     }

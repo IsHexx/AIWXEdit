@@ -81,6 +81,8 @@ export interface AIConfig {
     coverMethod: AICoverMethod;
     /** Cover generation model */
     coverModel: string;
+    /** Whether to enable cover generation */
+    enableCover: boolean;
 }
 
 /**
@@ -128,6 +130,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
         titlePrompt: '',
         coverMethod: 'image',
         coverModel: 'flux-schnell-free',
+        enableCover: true,
     },
     linkStyle: 'footnote',
     embedStyle: 'quote',

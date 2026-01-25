@@ -133,7 +133,8 @@ export class AssetStore {
                 }
 
                 // Load content
-                const css = await adapter.read(filePath);
+                let css = await adapter.read(filePath);
+                css = this.sanitizeCssSelectors(css);
 
                 // Register as a theme
                 this.themes.set(id, {
@@ -179,10 +180,11 @@ export class AssetStore {
                     continue;
                 }
                 const css = await adapter.read(cssPath);
+                const normalizedCss = this.sanitizeCssSelectors(css);
                 this.themes.set(item.className, {
                     id: item.className,
                     name: item.name,
-                    css,
+                    css: normalizedCss,
                     builtIn: false,
                 });
             }
@@ -640,6 +642,9 @@ export class AssetStore {
         // Replace '.markdown-body' legacy selector
         output = output.replace(/\.markdown-body/g, '.wx-article');
 
+        // Replace '.wdwxedit' legacy selector (used in MWeb themes)
+        output = output.replace(/\.wdwxedit/g, '.wx-article');
+
         // 3. For any other generic tag selectors that might be at root level, 
         // ideally we would parse the AST, but here we rely on the fact that
         // most Markdown themes are decent citizens or rely on .markdown-body.
@@ -659,6 +664,30 @@ export class AssetStore {
 
         // Since we don't have a full CSS parser here, we assume standard Markdown themes 
         // use .markdown-body. If they don't, we did our best with body/html replacement.
+
+        return output;
+    }
+
+    /**
+     * Sanitize and modernize selectors in CSS string
+     */
+    private sanitizeCssSelectors(css: string): string {
+        let output = css;
+
+        // Replace 'body' global selector
+        output = output.replace(/(^|[\s,{}])body(?=[\s,:{.[>])/gi, '$1.wx-article');
+
+        // Replace 'html' global selector
+        output = output.replace(/(^|[\s,{}])html(?=[\s,:{.[>])/gi, '$1.wx-article');
+
+        // Replace ':root'
+        output = output.replace(/:root/gi, '.wx-article');
+
+        // Replace '.markdown-body' legacy selector
+        output = output.replace(/\.markdown-body/g, '.wx-article');
+
+        // Replace '.wdwxedit' legacy selector (used in MWeb themes)
+        output = output.replace(/\.wdwxedit/g, '.wx-article');
 
         return output;
     }

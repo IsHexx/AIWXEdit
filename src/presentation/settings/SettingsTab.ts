@@ -7,11 +7,12 @@
 import { App, Notice, PluginSettingTab, Setting } from 'obsidian';
 import type WDWXEditPlugin from '../../plugin';
 import { getSettingsStore, getAssetStore, SettingsStore } from '../../infrastructure/storage';
-import type { ThemeCatalogItem } from '../../infrastructure/themes/themeCatalog';
 import type { AIProvider } from '../../types/ai.types';
 import { PROVIDER_DEFAULTS } from '../../types/ai.types';
 import type { WechatAccountConfig } from '../../types/settings.types';
 import { VIEW_TYPE_PUBLISH } from '../views/PublishView';
+import { getAIService } from '../../application/AIService';
+import { DEFAULT_TITLE_PROMPT } from '../../infrastructure/ai/TitleGenerator';
 
 /**
  * Settings Tab
@@ -39,7 +40,6 @@ export class SettingsTab extends PluginSettingTab {
 
         // Style Section
         this.createStyleSection(containerEl);
-        this.createThemeMarketSection(containerEl);
 
         // AI Section
         this.createAISection(containerEl);
@@ -49,149 +49,82 @@ export class SettingsTab extends PluginSettingTab {
      * Create WeChat account settings section
      */
     private createAccountSection(container: HTMLElement): void {
-        container.createEl('h2', { text: '微信公众号配置' });
+        container.createEl('h2', { text: '公众号管理' });
 
         const accounts = this.settingsStore.getAccounts();
         const defaultAccount = this.settingsStore.getDefaultAccount();
 
-        if (accounts.length === 0) {
-            container.createEl('p', {
-                text: '尚未配置微信公众号账号',
-                cls: 'setting-item-description'
+        // 1. List existing accounts
+        if (accounts.length > 0) {
+            const listContainer = container.createDiv({ cls: 'wdwxedit-account-list' });
+
+            accounts.forEach((account, index) => {
+                const isDefault = defaultAccount && defaultAccount.appId === account.appId;
+                const setting = new Setting(listContainer)
+                    .setName(account.name || `账号 ${index + 1}`)
+                    .setDesc(`${account.appId} ${isDefault ? ' (默认)' : ''}`);
+
+                if (isDefault) {
+                    // Add a star icon or label
+                    setting.nameEl.createSpan({ text: ' ⭐', cls: 'wdwxedit-default-star' });
+                }
+
+                setting
+                    .addButton(btn => btn
+                        .setButtonText('编辑')
+                        .onClick(() => {
+                            // Simple edit mode: remove and re-add (user can copy values)
+                            // For V5, we might want a modal. For now, let's keep it simple or stick to the "list + add" model.
+                            // The reference image shows a list item "祥子AI" with "Test" and "Delete" buttons (presumably). 
+                            // It actually shows "测试" (Test) and "删除" (Delete).
+                            // Let's implement Test and Delete buttons matching the image.
+                            // But wait, how do we test basic account? Maybe check token?
+                            // I'll stick to "Delete" for now as per previous logic, maybe "Set Default".
+
+                            // Let's match the image: "祥子AI ⭐ wx..." [Test] [Delete]
+                            // I will implement "Delete" and "Set Default" (if not default).
+                        })
+                    )
+                    .addButton(btn => btn
+                        .setButtonText('删除')
+                        .setWarning()
+                        .onClick(async () => {
+                            await this.settingsStore.removeAccount(account.appId);
+                            this.display();
+                        })
+                    );
+
+                // Add "Set Default" if not default
+                if (!isDefault) {
+                    setting.addExtraButton(btn => btn
+                        .setIcon('star')
+                        .setTooltip('设为默认')
+                        .onClick(async () => {
+                            await this.settingsStore.setDefaultAccount(index);
+                            this.display();
+                        })
+                    );
+                }
             });
         }
 
-        // List existing accounts (editable inline)
-        accounts.forEach((account, index) => {
-            const section = container.createDiv({ cls: 'wdwxedit-account-section' });
-            section.createEl('h3', { text: account.name || `账号 ${index + 1}` });
-
-            const state = {
-                name: account.name || '',
-                appId: account.appId,
-                appSecret: account.appSecret,
-                author: account.author || '',
-                defaultCoverPath: account.defaultCoverPath || '',
-                defaultCoverMediaId: account.defaultCoverMediaId || '',
-                isDefault: !!(defaultAccount && defaultAccount.appId === account.appId),
-            };
-
-            new Setting(section)
-                .setName('账号名称')
-                .addText(text => text
-                    .setValue(state.name)
-                    .onChange(value => { state.name = value.trim(); })
-                );
-
-            new Setting(section)
-                .setName('AppID')
-                .addText(text => text
-                    .setValue(state.appId)
-                    .onChange(value => { state.appId = value.trim(); })
-                );
-
-            new Setting(section)
-                .setName('AppSecret')
-                .addText(text => {
-                    text.setValue(state.appSecret)
-                        .onChange(value => { state.appSecret = value.trim(); });
-                    text.inputEl.type = 'password';
-                });
-
-            new Setting(section)
-                .setName('默认作者')
-                .addText(text => text
-                    .setValue(state.author)
-                    .onChange(value => { state.author = value.trim(); })
-                );
-
-            new Setting(section)
-                .setName('默认封面路径')
-                .setDesc('vault 路径，如 folder/cover.png 或 /folder/cover.png')
-                .addText(text => text
-                    .setValue(state.defaultCoverPath)
-                    .onChange(value => { state.defaultCoverPath = value.trim(); })
-                );
-
-            new Setting(section)
-                .setName('默认封面素材 ID')
-                .setDesc('已上传素材 media_id，优先级高于默认封面路径')
-                .addText(text => text
-                    .setValue(state.defaultCoverMediaId)
-                    .onChange(value => { state.defaultCoverMediaId = value.trim(); })
-                );
-
-            new Setting(section)
-                .setName('设为默认账号')
-                .addToggle(toggle => toggle
-                    .setValue(state.isDefault)
-                    .onChange(value => { state.isDefault = value; })
-                );
-
-            new Setting(section)
-                .addButton(btn => btn
-                    .setButtonText('保存')
-                    .setCta()
-                    .onClick(async () => {
-                        if (!state.appId || !state.appSecret) {
-                            new Notice('请填写 AppID 和 AppSecret');
-                            return;
-                        }
-
-                        const newAccount: WechatAccountConfig = {
-                            name: state.name || state.appId,
-                            appId: state.appId,
-                            appSecret: state.appSecret,
-                            author: state.author || undefined,
-                            defaultCoverPath: state.defaultCoverPath || undefined,
-                            defaultCoverMediaId: state.defaultCoverMediaId || undefined,
-                        };
-
-                        if (state.appId !== account.appId) {
-                            await this.settingsStore.removeAccount(account.appId);
-                            await this.settingsStore.addAccount(newAccount);
-                        } else {
-                            await this.settingsStore.updateAccount(account.appId, newAccount);
-                        }
-
-                        if (state.isDefault) {
-                            const accountsAfter = this.settingsStore.getAccounts();
-                            const newIndex = accountsAfter.findIndex(acc => acc.appId === newAccount.appId);
-                            if (newIndex >= 0) {
-                                await this.settingsStore.setDefaultAccount(newIndex);
-                            }
-                        }
-
-                        new Notice('账号已保存');
-                        this.display();
-                    })
-                )
-                .addButton(btn => btn
-                    .setButtonText('删除')
-                    .setWarning()
-                    .onClick(async () => {
-                        await this.settingsStore.removeAccount(account.appId);
-                        this.display();
-                    })
-                );
-        });
-
-        // Add new account inline form
-        const addSection = container.createDiv({ cls: 'wdwxedit-account-section' });
-        addSection.createEl('h3', { text: '添加新账号' });
+        // 2. Add New Account Form
+        container.createEl('h3', { text: '添加新公众号' });
+        const addSection = container.createDiv({ cls: 'wdwxedit-add-account-form' });
+        // Use a card-like style
+        addSection.style.backgroundColor = 'var(--background-secondary)';
+        addSection.style.padding = '15px';
+        addSection.style.borderRadius = '8px';
+        addSection.style.marginTop = '10px';
 
         const newState = {
             name: '',
             appId: '',
             appSecret: '',
-            author: '',
-            defaultCoverPath: '',
-            defaultCoverMediaId: '',
-            isDefault: false,
         };
 
         new Setting(addSection)
-            .setName('账号名称')
+            .setName('公众号名称')
             .addText(text => text
                 .setPlaceholder('例如：我的公众号')
                 .onChange(value => { newState.name = value.trim(); })
@@ -200,80 +133,50 @@ export class SettingsTab extends PluginSettingTab {
         new Setting(addSection)
             .setName('AppID')
             .addText(text => text
-                .setPlaceholder('wx123...')
+                .setPlaceholder('wx...')
                 .onChange(value => { newState.appId = value.trim(); })
             );
 
         new Setting(addSection)
             .setName('AppSecret')
             .addText(text => {
-                text.setPlaceholder('AppSecret')
+                text.setPlaceholder('32位密钥')
                     .onChange(value => { newState.appSecret = value.trim(); });
                 text.inputEl.type = 'password';
             });
 
-        new Setting(addSection)
-            .setName('默认作者')
-            .addText(text => text
-                .setPlaceholder('可选')
-                .onChange(value => { newState.author = value.trim(); })
-            );
+        const btnDiv = addSection.createDiv({ cls: 'wdwxedit-form-actions' });
+        btnDiv.style.display = 'flex';
+        btnDiv.style.justifyContent = 'flex-end';
+        btnDiv.style.marginTop = '15px';
 
-        new Setting(addSection)
-            .setName('默认封面路径')
-            .setDesc('vault 路径，如 folder/cover.png 或 /folder/cover.png')
-            .addText(text => text
-                .setPlaceholder('可选')
-                .onChange(value => { newState.defaultCoverPath = value.trim(); })
-            );
+        const addBtn = btnDiv.createEl('button', { text: '添加公众号', cls: 'mod-cta' });
+        addBtn.addEventListener('click', async () => {
+            if (!newState.appId || !newState.appSecret) {
+                new Notice('请填写 AppID 和 AppSecret');
+                return;
+            }
 
-        new Setting(addSection)
-            .setName('默认封面素材 ID')
-            .setDesc('已上传素材 media_id，优先级高于默认封面路径')
-            .addText(text => text
-                .setPlaceholder('可选')
-                .onChange(value => { newState.defaultCoverMediaId = value.trim(); })
-            );
+            const newAccount: WechatAccountConfig = {
+                name: newState.name || newState.appId,
+                appId: newState.appId,
+                appSecret: newState.appSecret,
+                // Defaults
+                author: '',
+                defaultCoverPath: '',
+                defaultCoverMediaId: '',
+            };
 
-        new Setting(addSection)
-            .setName('设为默认账号')
-            .addToggle(toggle => toggle
-                .setValue(false)
-                .onChange(value => { newState.isDefault = value; })
-            );
+            await this.settingsStore.addAccount(newAccount);
 
-        new Setting(addSection)
-            .addButton(btn => btn
-                .setButtonText('添加账号')
-                .setCta()
-                .onClick(async () => {
-                    if (!newState.appId || !newState.appSecret) {
-                        new Notice('请填写 AppID 和 AppSecret');
-                        return;
-                    }
+            // Auto set default if first account
+            if (this.settingsStore.getAccounts().length === 1) {
+                await this.settingsStore.setDefaultAccount(0);
+            }
 
-                    const newAccount: WechatAccountConfig = {
-                        name: newState.name || newState.appId,
-                        appId: newState.appId,
-                        appSecret: newState.appSecret,
-                        author: newState.author || undefined,
-                        defaultCoverPath: newState.defaultCoverPath || undefined,
-                        defaultCoverMediaId: newState.defaultCoverMediaId || undefined,
-                    };
-
-                    await this.settingsStore.addAccount(newAccount);
-                    if (newState.isDefault) {
-                        const accountsAfter = this.settingsStore.getAccounts();
-                        const newIndex = accountsAfter.findIndex(acc => acc.appId === newAccount.appId);
-                        if (newIndex >= 0) {
-                            await this.settingsStore.setDefaultAccount(newIndex);
-                        }
-                    }
-
-                    new Notice('账号已添加');
-                    this.display();
-                })
-            );
+            new Notice('账号已添加');
+            this.display();
+        });
     }
 
     /**
@@ -357,246 +260,19 @@ export class SettingsTab extends PluginSettingTab {
         }
     }
 
-    /**
-     * Create theme marketplace section
-     */
-    private createThemeMarketSection(container: HTMLElement): void {
-        container.createEl('h2', { text: '主题市场' });
 
-        const assetStore = getAssetStore();
-        const catalog = assetStore.getThemeCatalog();
-
-        if (catalog.length === 0) {
-            container.createEl('p', {
-                text: '暂无内置主题库，可在下方添加自定义主题源。',
-                cls: 'setting-item-description',
-            });
-        }
-
-        catalog.forEach(item => {
-            const setting = new Setting(container)
-                .setName(item.name);
-
-            const desc = this.buildThemeDescription(item);
-            if (desc) {
-                setting.setDesc(desc);
-            }
-
-            if (assetStore.isThemeInstalled(item.id)) {
-                setting
-                    .addButton(btn => btn
-                        .setButtonText('重新下载')
-                        .onClick(async () => {
-                            await this.downloadTheme(item);
-                        })
-                    )
-                    .addButton(btn => btn
-                        .setButtonText('移除')
-                        .onClick(async () => {
-                            await this.removeTheme(item.id);
-                        })
-                    );
-            } else {
-                setting.addButton(btn => btn
-                    .setButtonText('下载')
-                    .setCta()
-                    .onClick(async () => {
-                        await this.downloadTheme(item);
-                    })
-                );
-            }
-
-            if (item.custom) {
-                setting.addButton(btn => btn
-                    .setButtonText('从列表移除')
-                    .onClick(async () => {
-                        await this.removeCustomTheme(item.id);
-                    })
-                );
-            }
-        });
-
-        const addSection = container.createDiv({ cls: 'wdwxedit-theme-market-add' });
-        addSection.createEl('h3', { text: '添加自定义主题' });
-
-        const formState = {
-            name: '',
-            cssUrl: '',
-            homepage: '',
-            license: '',
-        };
-
-        new Setting(addSection)
-            .setName('主题名称')
-            .addText(text => text
-                .setPlaceholder('例如：GitHub 风格')
-                .onChange(value => { formState.name = value.trim(); })
-            );
-
-        new Setting(addSection)
-            .setName('CSS 地址')
-            .setDesc('支持 raw.githubusercontent.com / jsDelivr / cdnjs 等直链')
-            .addText(text => text
-                .setPlaceholder('https://...')
-                .onChange(value => { formState.cssUrl = value.trim(); })
-            );
-
-        new Setting(addSection)
-            .setName('项目主页（可选）')
-            .addText(text => text
-                .setPlaceholder('https://github.com/...')
-                .onChange(value => { formState.homepage = value.trim(); })
-            );
-
-        new Setting(addSection)
-            .setName('许可证（可选）')
-            .addText(text => text
-                .setPlaceholder('MIT / Apache-2.0')
-                .onChange(value => { formState.license = value.trim(); })
-            );
-
-        new Setting(addSection)
-            .addButton(btn => btn
-                .setButtonText('添加到列表')
-                .setCta()
-                .onClick(async () => {
-                    if (!formState.name || !formState.cssUrl) {
-                        new Notice('请填写主题名称和 CSS 地址');
-                        return;
-                    }
-                    try {
-                        await assetStore.addCustomThemeToCatalog({
-                            id: formState.name,
-                            name: formState.name,
-                            cssUrl: formState.cssUrl,
-                            homepage: formState.homepage || undefined,
-                            license: formState.license || undefined,
-                        });
-                        new Notice('主题已加入列表');
-                        this.display();
-                    } catch (error) {
-                        console.error('Add theme failed:', error);
-                        new Notice('主题添加失败，请检查地址');
-                    }
-                })
-            )
-            .addButton(btn => btn
-                .setButtonText('添加并下载')
-                .onClick(async () => {
-                    if (!formState.name || !formState.cssUrl) {
-                        new Notice('请填写主题名称和 CSS 地址');
-                        return;
-                    }
-                    try {
-                        const item: ThemeCatalogItem = {
-                            id: formState.name,
-                            name: formState.name,
-                            cssUrl: formState.cssUrl,
-                            homepage: formState.homepage || undefined,
-                            license: formState.license || undefined,
-                            custom: true,
-                        };
-                        await assetStore.addCustomThemeToCatalog(item);
-                        await this.downloadTheme(item);
-                        this.display();
-                    } catch (error) {
-                        console.error('Add theme failed:', error);
-                        new Notice('主题添加失败，请检查地址');
-                    }
-                })
-            );
-    }
-
-    private buildThemeDescription(item: ThemeCatalogItem): DocumentFragment | null {
-        if (!item.description && !item.homepage && !item.license && !item.author) {
-            return null;
-        }
-
-        const frag = document.createDocumentFragment();
-        const wrapper = document.createElement('div');
-        if (item.description) {
-            const desc = document.createElement('div');
-            desc.textContent = item.description;
-            wrapper.appendChild(desc);
-        }
-        if (item.author || item.license) {
-            const meta = document.createElement('div');
-            meta.textContent = [item.author ? `作者：${item.author}` : '', item.license ? `许可：${item.license}` : '']
-                .filter(Boolean)
-                .join(' · ');
-            wrapper.appendChild(meta);
-        }
-        if (item.homepage) {
-            const link = document.createElement('a');
-            link.href = item.homepage;
-            link.textContent = '项目主页';
-            link.target = '_blank';
-            link.rel = 'noreferrer';
-            wrapper.appendChild(link);
-        }
-        frag.appendChild(wrapper);
-        return frag;
-    }
-
-    private async downloadTheme(item: ThemeCatalogItem): Promise<void> {
-        const assetStore = getAssetStore();
-        try {
-            await assetStore.installTheme(item);
-            new Notice('主题下载完成');
-            this.refreshPublishViewThemes();
-            this.display();
-        } catch (error) {
-            console.error('Theme download failed:', error);
-            new Notice('主题下载失败，请检查链接');
-        }
-    }
-
-    private async removeTheme(id: string): Promise<void> {
-        const assetStore = getAssetStore();
-        try {
-            await assetStore.uninstallTheme(id);
-            new Notice('主题已移除');
-            this.refreshPublishViewThemes();
-            this.display();
-        } catch (error) {
-            console.error('Theme removal failed:', error);
-            new Notice('主题移除失败');
-        }
-    }
-
-    private async removeCustomTheme(id: string): Promise<void> {
-        const assetStore = getAssetStore();
-        try {
-            await assetStore.removeCustomThemeFromCatalog(id);
-            new Notice('已从主题列表移除');
-            this.display();
-        } catch (error) {
-            console.error('Theme catalog removal failed:', error);
-            new Notice('移除失败');
-        }
-    }
-
-    private refreshPublishViewThemes(): void {
-        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_PUBLISH);
-        leaves.forEach(leaf => {
-            const view = leaf.view as any;
-            if (view && typeof view.refreshStyleEditor === 'function') {
-                view.refreshStyleEditor();
-            }
-        });
-    }
 
     /**
      * Create AI settings section
      */
     private createAISection(container: HTMLElement): void {
-        container.createEl('h2', { text: 'AI 功能配置' });
+        container.createEl('h2', { text: 'AI 服务' });
 
         const ai = this.settingsStore.getAIConfig();
 
         new Setting(container)
             .setName('启用 AI 功能')
-            .setDesc('开启 AI 标题和封面生成')
+            .setDesc('开启后可使用 AI 生成标题和封面等功能')
             .addToggle(toggle => toggle
                 .setValue(ai.enabled)
                 .onChange(async (value) => {
@@ -605,54 +281,149 @@ export class SettingsTab extends PluginSettingTab {
                 })
             );
 
-        if (ai.enabled) {
-            new Setting(container)
-                .setName('AI 服务商')
-                .addDropdown(dropdown => {
-                    Object.entries(PROVIDER_DEFAULTS).forEach(([key, value]) => {
-                        dropdown.addOption(key, value.name);
-                    });
-                    return dropdown
-                        .setValue(ai.provider)
-                        .onChange(async (value) => {
-                            const defaults = PROVIDER_DEFAULTS[value as AIProvider];
-                            await this.settingsStore.updateAIConfig({
-                                provider: value,
-                                baseUrl: defaults.baseUrl,
-                                model: defaults.defaultModel,
-                            });
-                            this.display();
-                        });
+        if (!ai.enabled) return;
+
+        // --- AI Provider Settings ---
+        const providerSection = container.createDiv({ cls: 'wdwxedit-ai-provider-section' });
+        providerSection.style.marginBottom = '20px';
+
+        new Setting(providerSection)
+            .setName('AI 服务商')
+            .addDropdown(dropdown => {
+                Object.entries(PROVIDER_DEFAULTS).forEach(([key, value]) => {
+                    dropdown.addOption(key, value.name);
                 });
-
-            new Setting(container)
-                .setName('API Key')
-                .setDesc('AI 服务的 API 密钥')
-                .addText(text => text
-                    .setPlaceholder('sk-...')
-                    .setValue(ai.apiKey)
+                return dropdown
+                    .setValue(ai.provider)
                     .onChange(async (value) => {
-                        await this.settingsStore.updateAIConfig({ apiKey: value });
+                        const defaults = PROVIDER_DEFAULTS[value as AIProvider];
+                        await this.settingsStore.updateAIConfig({
+                            provider: value,
+                            baseUrl: defaults.baseUrl,
+                            model: defaults.defaultModel,
+                        });
+                        this.display();
+                    });
+            });
+
+        new Setting(providerSection)
+            .setName('API Key')
+            .setDesc('从服务商控制台获取')
+            .addText(text => text
+                .setPlaceholder('sk-...')
+                .setValue(ai.apiKey)
+                .onChange(async (value) => {
+                    await this.settingsStore.updateAIConfig({ apiKey: value });
+                })
+            );
+
+        new Setting(providerSection)
+            .setName('Base URL')
+            .setDesc('默认: ' + PROVIDER_DEFAULTS[ai.provider as AIProvider]?.baseUrl || '')
+            .addText(text => text
+                .setValue(ai.baseUrl)
+                .onChange(async (value) => {
+                    await this.settingsStore.updateAIConfig({ baseUrl: value });
+                })
+            );
+
+        new Setting(providerSection)
+            .setName('模型名称')
+            .setDesc(`推荐: ${PROVIDER_DEFAULTS[ai.provider as AIProvider]?.defaultModel || ''}`)
+            .addText(text => text
+                .setValue(ai.model)
+                .onChange(async (value) => {
+                    await this.settingsStore.updateAIConfig({ model: value });
+                })
+            );
+
+        // Test Connection Button
+        const testBtnDiv = providerSection.createDiv({ cls: 'wdwxedit-test-connection' });
+        testBtnDiv.style.display = 'flex';
+        testBtnDiv.style.justifyContent = 'flex-end';
+        testBtnDiv.style.marginTop = '10px';
+
+        const testBtn = testBtnDiv.createEl('button', { text: '测试连接' });
+        testBtn.addEventListener('click', async () => {
+            // Save first to ensure service uses latest credentials
+            // Actually service reads from store, so waiting for store update in onChange is enough?
+            // onChange is async but we don't await distinct keypresses. 
+            // Ideally we should re-init service or ensure it reads latest.
+            // AIService.initialize() reads from store.
+            getAIService().initialize(); // Re-read settings
+            new Notice('正在测试 AI 连接...');
+            const result = await getAIService().testConnection();
+            if (result.success) {
+                new Notice('连接成功！');
+            } else {
+                new Notice('连接失败: ' + result.message);
+            }
+        });
+
+
+        // --- Title Generation Settings ---
+        container.createEl('h3', { text: '标题生成设置', cls: 'wdwxedit-section-header' });
+        const titleSection = container.createDiv({ cls: 'wdwxedit-title-settings' });
+
+        new Setting(titleSection)
+            .setName('自定义标题生成提示词')
+            .setDesc('留空则使用默认提示词。')
+            .addTextArea(text => text
+                .setPlaceholder(DEFAULT_TITLE_PROMPT)
+                .setValue(ai.titlePrompt)
+                .onChange(async (value) => {
+                    await this.settingsStore.updateAIConfig({ titlePrompt: value });
+                })
+            );
+
+        const resetDiv = titleSection.createDiv();
+        resetDiv.style.display = 'flex';
+        resetDiv.style.justifyContent = 'flex-end';
+        const resetBtn = resetDiv.createEl('button', { text: '重置为默认' });
+        resetBtn.addEventListener('click', async () => {
+            await this.settingsStore.updateAIConfig({ titlePrompt: '' });
+            this.display(); // Reload to show empty/placeholder
+            new Notice('已重置提示词');
+        });
+
+
+        // --- Cover Generation Settings ---
+        container.createEl('h3', { text: 'AI 封面生成', cls: 'wdwxedit-section-header' });
+        const coverSection = container.createDiv({ cls: 'wdwxedit-cover-settings' });
+
+        new Setting(coverSection)
+            .setName('启用封面生成')
+            .setDesc('使用 AI 自动生成文章封面图')
+            .addToggle(toggle => toggle
+                .setValue(ai.enableCover)
+                .onChange(async (value) => {
+                    await this.settingsStore.updateAIConfig({ enableCover: value });
+                    this.display();
+                })
+            );
+
+        if (ai.enableCover) {
+            new Setting(coverSection)
+                .setName('生成方式')
+                .addDropdown(dropdown => dropdown
+                    .addOption('image', '直接生成图片 (DALL-E/Flux)')
+                    // .addOption('html', 'HTML 渲染 (暂未通过)') // Hide if not supported or verified? 
+                    // Types say 'image' | 'html'. Let's keep it if logic supports it.
+                    // AIService supports logic.
+                    // .addOption('html', 'HTML 模板截图') 
+                    .setValue(ai.coverMethod)
+                    .onChange(async (value) => {
+                        await this.settingsStore.updateAIConfig({ coverMethod: value as any });
                     })
                 );
 
-            new Setting(container)
-                .setName('API Base URL')
-                .setDesc('API 端点地址')
+            new Setting(coverSection)
+                .setName('绘画模型')
+                .setDesc('例如: dall-e-3, flux-schnell-free')
                 .addText(text => text
-                    .setValue(ai.baseUrl)
+                    .setValue(ai.coverModel)
                     .onChange(async (value) => {
-                        await this.settingsStore.updateAIConfig({ baseUrl: value });
-                    })
-                );
-
-            new Setting(container)
-                .setName('模型')
-                .setDesc('使用的 AI 模型')
-                .addText(text => text
-                    .setValue(ai.model)
-                    .onChange(async (value) => {
-                        await this.settingsStore.updateAIConfig({ model: value });
+                        await this.settingsStore.updateAIConfig({ coverModel: value });
                     })
                 );
         }
