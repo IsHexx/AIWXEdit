@@ -5,15 +5,15 @@
  */
 
 import { App, Notice, PluginSettingTab, Setting } from 'obsidian';
-import type WDWXEditPlugin from '../../plugin';
+import type AIWXEditPlugin from '../../plugin';
 import { getSettingsStore, getAssetStore, SettingsStore } from '../../infrastructure/storage';
 import type { AIProvider } from '../../types/ai.types';
 import { PROVIDER_DEFAULTS } from '../../types/ai.types';
-import type { WechatAccountConfig } from '../../types/settings.types';
-import { VIEW_TYPE_PUBLISH } from '../views/PublishView';
 import { ThemeMarketModal } from '../modals/ThemeMarketModal';
 import { getAIService } from '../../application/AIService';
 import { DEFAULT_TITLE_PROMPT } from '../../infrastructure/ai/TitleGenerator';
+import { AccountModal } from '../modals/AccountModal';
+import { getWechatClient } from '../../infrastructure/wechat';
 
 /**
  * Settings Tab
@@ -21,11 +21,11 @@ import { DEFAULT_TITLE_PROMPT } from '../../infrastructure/ai/TitleGenerator';
  * Provides UI for configuring the plugin.
  */
 export class SettingsTab extends PluginSettingTab {
-    plugin: WDWXEditPlugin;
+    plugin: AIWXEditPlugin;
     private settingsStore: SettingsStore;
     private isVisible = false;
 
-    constructor(app: App, plugin: WDWXEditPlugin) {
+    constructor(app: App, plugin: AIWXEditPlugin) {
         super(app, plugin);
         this.plugin = plugin;
         this.settingsStore = getSettingsStore();
@@ -50,7 +50,7 @@ export class SettingsTab extends PluginSettingTab {
         const { containerEl } = this;
         containerEl.empty();
 
-        containerEl.createEl('h1', { text: 'WDWXEdit 设置' });
+        containerEl.createEl('h1', { text: 'AIWXEdit 设置' });
 
         // WeChat Account Section
         this.createAccountSection(containerEl);
@@ -88,18 +88,31 @@ export class SettingsTab extends PluginSettingTab {
 
                 setting
                     .addButton(btn => btn
+                        .setButtonText('测试')
+                        .onClick(async () => {
+                            const btnEl = btn.buttonEl;
+                            btnEl.disabled = true;
+                            const originalText = btnEl.textContent;
+                            btnEl.textContent = '测试中...';
+                            try {
+                                const client = getWechatClient(account.appId, account.appSecret);
+                                await client.refreshToken();
+                                new Notice('连接成功');
+                            } catch (error) {
+                                new Notice(error instanceof Error ? error.message : '连接失败');
+                            } finally {
+                                btnEl.disabled = false;
+                                btnEl.textContent = originalText || '测试';
+                            }
+                        })
+                    )
+                    .addButton(btn => btn
                         .setButtonText('编辑')
                         .onClick(() => {
-                            // Simple edit mode: remove and re-add (user can copy values)
-                            // For V5, we might want a modal. For now, let's keep it simple or stick to the "list + add" model.
-                            // The reference image shows a list item "祥子AI" with "Test" and "Delete" buttons (presumably). 
-                            // It actually shows "测试" (Test) and "删除" (Delete).
-                            // Let's implement Test and Delete buttons matching the image.
-                            // But wait, how do we test basic account? Maybe check token?
-                            // I'll stick to "Delete" for now as per previous logic, maybe "Set Default".
-
-                            // Let's match the image: "祥子AI ⭐ wx..." [Test] [Delete]
-                            // I will implement "Delete" and "Set Default" (if not default).
+                            new AccountModal(this.app, {
+                                account,
+                                onSaved: () => this.display(),
+                            }).open();
                         })
                     )
                     .addButton(btn => btn
@@ -125,75 +138,25 @@ export class SettingsTab extends PluginSettingTab {
             });
         }
 
-        // 2. Add New Account Form
-        container.createEl('h3', { text: '添加新公众号' });
-        const addSection = container.createDiv({ cls: 'wdwxedit-add-account-form' });
-        // Use a card-like style
-        addSection.style.backgroundColor = 'var(--background-secondary)';
-        addSection.style.padding = '15px';
-        addSection.style.borderRadius = '8px';
-        addSection.style.marginTop = '10px';
-
-        const newState = {
-            name: '',
-            appId: '',
-            appSecret: '',
-        };
-
-        new Setting(addSection)
-            .setName('公众号名称')
-            .addText(text => text
-                .setPlaceholder('例如：我的公众号')
-                .onChange(value => { newState.name = value.trim(); })
+        // 2. Add account
+        new Setting(container)
+            .setName('添加新公众号')
+            .setDesc('支持先测试连接，再保存')
+            .addButton(btn => btn
+                .setButtonText('添加公众号')
+                .setCta()
+                .onClick(() => {
+                    new AccountModal(this.app, {
+                        onSaved: async () => {
+                            // Auto set default if first account
+                            if (this.settingsStore.getAccounts().length === 1) {
+                                await this.settingsStore.setDefaultAccount(0);
+                            }
+                            this.display();
+                        },
+                    }).open();
+                })
             );
-
-        new Setting(addSection)
-            .setName('AppID')
-            .addText(text => text
-                .setPlaceholder('wx...')
-                .onChange(value => { newState.appId = value.trim(); })
-            );
-
-        new Setting(addSection)
-            .setName('AppSecret')
-            .addText(text => {
-                text.setPlaceholder('32位密钥')
-                    .onChange(value => { newState.appSecret = value.trim(); });
-                text.inputEl.type = 'password';
-            });
-
-        const btnDiv = addSection.createDiv({ cls: 'wdwxedit-form-actions' });
-        btnDiv.style.display = 'flex';
-        btnDiv.style.justifyContent = 'flex-end';
-        btnDiv.style.marginTop = '15px';
-
-        const addBtn = btnDiv.createEl('button', { text: '添加公众号', cls: 'mod-cta' });
-        addBtn.addEventListener('click', async () => {
-            if (!newState.appId || !newState.appSecret) {
-                new Notice('请填写 AppID 和 AppSecret');
-                return;
-            }
-
-            const newAccount: WechatAccountConfig = {
-                name: newState.name || newState.appId,
-                appId: newState.appId,
-                appSecret: newState.appSecret,
-                // Defaults
-                author: '',
-                defaultCoverPath: '',
-                defaultCoverMediaId: '',
-            };
-
-            await this.settingsStore.addAccount(newAccount);
-
-            // Auto set default if first account
-            if (this.settingsStore.getAccounts().length === 1) {
-                await this.settingsStore.setDefaultAccount(0);
-            }
-
-            new Notice('账号已添加');
-            this.display();
-        });
     }
 
     /**

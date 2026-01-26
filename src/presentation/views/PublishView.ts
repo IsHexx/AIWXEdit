@@ -5,13 +5,13 @@
  */
 
 import { ItemView, WorkspaceLeaf, TFile, Notice, MarkdownView } from 'obsidian';
-import type WDWXEditPlugin from '../../plugin';
+import type AIWXEditPlugin from '../../plugin';
 import { getPreviewService, PreviewService } from '../../application';
 import { StyleEditor, type StyleEditorEvents, BUILTIN_THEMES, BUILTIN_HIGHLIGHTS } from '../components';
 import { getSettingsStore, getAssetStore } from '../../infrastructure/storage';
 import { PublishModal } from '../modals/PublishModal';
 
-export const VIEW_TYPE_PUBLISH = 'wdwxedit-publish-view';
+export const VIEW_TYPE_PUBLISH = 'aiwxedit-publish-view';
 
 /**
  * Publish View
@@ -19,7 +19,7 @@ export const VIEW_TYPE_PUBLISH = 'wdwxedit-publish-view';
  * Displays article preview and publishing controls.
  */
 export class PublishView extends ItemView {
-    private plugin: WDWXEditPlugin;
+    private plugin: AIWXEditPlugin;
     private previewService: PreviewService;
     private previewEl: HTMLElement | null = null;
     private toolbarEl: HTMLElement | null = null;
@@ -27,7 +27,7 @@ export class PublishView extends ItemView {
     private styleEditorContainer: HTMLElement | null = null;
     private dynamicStyleEl: HTMLStyleElement | null = null;
 
-    constructor(leaf: WorkspaceLeaf, plugin: WDWXEditPlugin) {
+    constructor(leaf: WorkspaceLeaf, plugin: AIWXEditPlugin) {
         super(leaf);
         this.plugin = plugin;
         this.previewService = getPreviewService();
@@ -51,6 +51,14 @@ export class PublishView extends ItemView {
 
         // Build UI
         this.buildUI();
+
+        // Refresh toolbar when settings change (e.g. accounts added/edited)
+        const offSettings = getSettingsStore().addListener(() => {
+            if (this.toolbarEl) {
+                this.buildToolbar(this.toolbarEl);
+            }
+        });
+        this.register(() => offSettings());
 
         // Subscribe to preview changes
         this.previewService.addListener((state) => {

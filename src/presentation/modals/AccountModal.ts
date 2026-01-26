@@ -7,6 +7,7 @@
 import { App, Modal, Setting, Notice } from 'obsidian';
 import type { WechatAccountConfig } from '../../types/settings.types';
 import { getSettingsStore } from '../../infrastructure/storage';
+import { getWechatClient } from '../../infrastructure/wechat';
 
 export interface AccountModalOptions {
     account?: WechatAccountConfig;
@@ -95,6 +96,27 @@ export class AccountModal extends Modal {
         const footer = contentEl.createDiv({ cls: 'wdwxedit-modal-footer' });
         const cancelBtn = footer.createEl('button', { text: '取消' });
         cancelBtn.addEventListener('click', () => this.close());
+
+        const testBtn = footer.createEl('button', { text: '测试连接' });
+        testBtn.addEventListener('click', async () => {
+            if (!state.appId || !state.appSecret) {
+                new Notice('请填写 AppID 和 AppSecret');
+                return;
+            }
+            testBtn.disabled = true;
+            const originalText = testBtn.textContent;
+            testBtn.textContent = '测试中...';
+            try {
+                const client = getWechatClient(state.appId, state.appSecret);
+                await client.refreshToken();
+                new Notice('连接成功');
+            } catch (error) {
+                new Notice(error instanceof Error ? error.message : '连接失败');
+            } finally {
+                testBtn.disabled = false;
+                testBtn.textContent = originalText || '测试连接';
+            }
+        });
 
         const saveBtn = footer.createEl('button', { text: '保存', cls: 'mod-cta' });
         saveBtn.addEventListener('click', async () => {
