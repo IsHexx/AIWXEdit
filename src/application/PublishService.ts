@@ -160,7 +160,16 @@ export class PublishService {
             if (options.existingDraftId) {
                 result = await client.updateDraft(options.existingDraftId, draftArticle);
             } else {
-                result = await client.createDraft(draftArticle);
+                const titleToCheck = (draftArticle.title || '').trim();
+                const existing = titleToCheck ? await client.findDraftByTitle(titleToCheck, { maxScan: 100 }) : { success: true };
+                if (!existing.success) {
+                    return { success: false, error: existing.error || 'Failed to check existing drafts' };
+                }
+                if (existing.mediaId) {
+                    result = await client.updateDraft(existing.mediaId, draftArticle, existing.index ?? 0);
+                } else {
+                    result = await client.createDraft(draftArticle);
+                }
             }
 
             if (!result.success) {

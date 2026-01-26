@@ -94,6 +94,31 @@ export interface DraftResponse {
 }
 
 /**
+ * Draft batch get (list) response types
+ */
+export interface DraftBatchGetNewsItem {
+    title: string;
+    author?: string;
+    digest?: string;
+    thumb_media_id?: string;
+    content?: string;
+}
+
+export interface DraftBatchGetItem {
+    media_id: string;
+    content?: {
+        news_item: DraftBatchGetNewsItem[];
+    };
+    update_time: number;
+}
+
+export interface DraftBatchGetResponse {
+    total_count: number;
+    item_count: number;
+    item: DraftBatchGetItem[];
+}
+
+/**
  * WeChat client configuration
  */
 export interface WechatClientConfig {

@@ -277,6 +277,78 @@
     padding: 6px 12px;
 }
 
+/* Cover picker modal */
+.wdwxedit-cover-tabs {
+    display: flex;
+    gap: 8px;
+    margin: 10px 0 12px;
+}
+
+.wdwxedit-cover-tab {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-primary);
+    cursor: pointer;
+}
+
+.wdwxedit-cover-tab.is-active {
+    background: var(--background-modifier-hover);
+}
+
+.wdwxedit-cover-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.wdwxedit-cover-hint {
+    color: var(--text-muted);
+    font-size: 12px;
+    margin: 6px 0 10px;
+}
+
+.wdwxedit-cover-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.wdwxedit-cover-card {
+    padding: 0;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    background: var(--background-primary);
+    overflow: hidden;
+    cursor: pointer;
+    text-align: left;
+}
+
+.wdwxedit-cover-thumb {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    display: block;
+    background: var(--background-secondary);
+}
+
+.wdwxedit-cover-meta {
+    padding: 6px 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wdwxedit-cover-loading,
+.wdwxedit-cover-error,
+.wdwxedit-cover-empty {
+    color: var(--text-muted);
+    padding: 8px 0;
+}
+
 /* ================================
    Account Section
    ================================ */
@@ -291,4 +363,31 @@
 
 .wdwxedit-account-section h3 {
     margin: 0 0 8px;
+}
+
+/* Mini button for compact actions */
+.wdwxedit-mini-btn {
+    padding: 0 6px;
+    height: 20px !important;
+    min-height: 0 !important;
+    line-height: 18px;
+    /* Vertically center text manually or use flex */
+    width: auto !important;
+    min-width: unset !important;
+    white-space: nowrap;
+    border-radius: 4px;
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-primary);
+    color: var(--text-normal);
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.wdwxedit-mini-btn:hover {
+    background: var(--background-modifier-hover);
 }

@@ -160,7 +160,14 @@ export class PublishView extends ItemView {
             };
         }
 
-        // Cover options
+        // Hidden file input for cover upload
+        const coverInput = container.createEl('input', {
+            type: 'file',
+            attr: { accept: 'image/*' }
+        });
+        coverInput.style.display = 'none';
+
+        // Cover options container
         const coverGroup = leftSection.createDiv({ cls: 'wdwxedit-toolbar-group' });
         coverGroup.createEl('span', { text: '封面:', cls: 'wdwxedit-toolbar-label' });
 
@@ -170,13 +177,54 @@ export class PublishView extends ItemView {
         // Default radio
         const defaultLabel = coverOptions.createEl('label', { cls: 'wdwxedit-radio-label' });
         const defaultRadio = defaultLabel.createEl('input', { type: 'radio', attr: { name: 'cover-mode' } });
-        defaultRadio.checked = true; // Use default logic for now
+        defaultRadio.checked = true;
         defaultLabel.createSpan({ text: '默认' });
 
         // Upload radio
         const uploadLabel = coverOptions.createEl('label', { cls: 'wdwxedit-radio-label' });
         const uploadRadio = uploadLabel.createEl('input', { type: 'radio', attr: { name: 'cover-mode' } });
         uploadLabel.createSpan({ text: '上传' });
+
+        // Select File Button (initially hidden)
+        const selectFileBtn = coverOptions.createEl('button', {
+            text: '选择图片',
+            cls: 'wdwxedit-mini-btn',
+            attr: { type: 'button' }
+        });
+        selectFileBtn.style.display = 'none';
+        selectFileBtn.style.marginLeft = '4px';
+
+        selectFileBtn.addEventListener('click', () => {
+            coverInput.click();
+        });
+
+        // Event Listeners
+        defaultRadio.addEventListener('change', () => {
+            if (defaultRadio.checked) {
+                this.selectedCover = null;
+                coverInput.value = '';
+                selectFileBtn.style.display = 'none';
+                selectFileBtn.textContent = '选择图片';
+            }
+        });
+
+        uploadRadio.addEventListener('change', () => {
+            if (uploadRadio.checked) {
+                selectFileBtn.style.display = 'inline-flex';
+            }
+        });
+
+        // Update file input change listener
+        coverInput.addEventListener('change', () => {
+            const file = coverInput.files?.[0];
+            if (file) {
+                this.selectedCover = file;
+                uploadRadio.checked = true;
+                selectFileBtn.style.display = 'inline-flex';
+                selectFileBtn.textContent = file.name.length > 8 ? file.name.slice(0, 8) + '...' : file.name;
+                new Notice(`已选择封面: ${file.name}`);
+            }
+        });
 
         // Right Section: Buttons
         const rightSection = container.createDiv({ cls: 'wdwxedit-toolbar-right' });
@@ -205,6 +253,8 @@ export class PublishView extends ItemView {
         sendBtn.innerHTML = '📤';
         sendBtn.addEventListener('click', () => this.publish());
     }
+
+    private selectedCover: File | null = null;
 
     /**
      * Build style editor
@@ -362,6 +412,11 @@ export class PublishView extends ItemView {
         new PublishModal(this.app, state.file, {
             article: state.article || undefined,
             onPublished: () => this.refresh(),
+            coverOverride: this.selectedCover ? {
+                type: 'blob',
+                blob: this.selectedCover,
+                filename: this.selectedCover.name
+            } : undefined
         }).open();
     }
 }

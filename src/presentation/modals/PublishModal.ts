@@ -10,10 +10,12 @@ import { getPublishService } from '../../application';
 import { getSettingsStore } from '../../infrastructure/storage';
 import { getWechatClient } from '../../infrastructure/wechat';
 import { getAIService } from '../../application';
+import { CoverPickerModal } from './CoverPickerModal';
 
 export interface PublishModalOptions {
     article?: ParsedArticle;
     onPublished?: () => void;
+    coverOverride?: CoverSource;
 }
 
 type CoverSource =
@@ -26,14 +28,17 @@ export class PublishModal extends Modal {
     private file: TFile;
     private article?: ParsedArticle;
     private onPublished?: () => void;
+    private initialCoverOverride?: CoverSource;
 
     private coverSource: CoverSource = { type: 'none' };
+    private coverManuallySet: boolean = false;
 
     constructor(modalApp: App, file: TFile, options: PublishModalOptions = {}) {
         super(modalApp);
         this.file = file;
         this.article = options.article;
         this.onPublished = options.onPublished;
+        this.initialCoverOverride = options.coverOverride;
     }
 
     onOpen(): void {
@@ -62,9 +67,21 @@ export class PublishModal extends Modal {
             useExistingDraft: false,
             existingDraftId: '',
         };
-        this.coverSource = state.coverPath ? { type: 'path', path: state.coverPath } : { type: 'none' };
+
+        if (this.initialCoverOverride) {
+            this.coverSource = this.initialCoverOverride;
+            this.coverManuallySet = true;
+            if (this.initialCoverOverride.type === 'path') {
+                state.coverPath = this.initialCoverOverride.path;
+            } else if (this.initialCoverOverride.type === 'media') {
+                state.coverMediaId = this.initialCoverOverride.mediaId;
+            }
+        } else {
+            this.coverSource = state.coverPath ? { type: 'path', path: state.coverPath } : { type: 'none' };
+        }
 
         // Account selector
+        let onAccountChanged: (() => void) | null = null;
         new Setting(contentEl)
             .setName('公众号账号')
             .addDropdown(dropdown => {
@@ -74,6 +91,7 @@ export class PublishModal extends Modal {
                 dropdown.setValue(state.appId);
                 dropdown.onChange(value => {
                     state.appId = value;
+                    onAccountChanged?.();
                 });
             });
 
@@ -108,6 +126,7 @@ export class PublishModal extends Modal {
             .setValue(state.coverPath)
             .onChange(value => {
                 state.coverPath = value.trim();
+                this.coverManuallySet = true;
                 this.coverSource = state.coverPath ? { type: 'path', path: state.coverPath } : { type: 'none' };
             })
         );
@@ -116,6 +135,7 @@ export class PublishModal extends Modal {
             coverSetting.addButton(btn => btn
                 .setButtonText('使用 frontmatter')
                 .onClick(() => {
+                    this.coverManuallySet = true;
                     state.coverPath = this.article?.metadata.cover || '';
                     this.coverSource = state.coverPath ? { type: 'path', path: state.coverPath } : { type: 'none' };
                     const inputEl = coverSetting.controlEl.querySelector('input') as HTMLInputElement | null;
@@ -133,6 +153,7 @@ export class PublishModal extends Modal {
                 .setValue(state.coverMediaId)
                 .onChange(value => {
                     state.coverMediaId = value.trim();
+                    this.coverManuallySet = true;
                     if (state.coverMediaId) {
                         this.coverSource = { type: 'media', mediaId: state.coverMediaId };
                     } else if (state.coverPath) {
@@ -144,43 +165,36 @@ export class PublishModal extends Modal {
             );
 
         const coverMediaInput = coverMediaSetting.controlEl.querySelector('input') as HTMLInputElement | null;
-        const coverUploadInput = contentEl.createEl('input', {
-            type: 'file',
-            attr: { accept: 'image/*' },
-        });
-        coverUploadInput.style.display = 'none';
 
         coverMediaSetting.addButton(btn => btn
             .setButtonText('上传封面')
             .onClick(() => {
-                coverUploadInput.click();
+                const account = accounts.find(acc => acc.appId === state.appId);
+                if (!account) {
+                    new Notice('未找到公众号账号');
+                    return;
+                }
+
+                new CoverPickerModal(this.app, {
+                    appId: account.appId,
+                    appSecret: account.appSecret,
+                    onPicked: (picked) => {
+                        this.coverManuallySet = true;
+                        state.coverMediaId = picked.mediaId;
+                        this.coverSource = { type: 'media', mediaId: picked.mediaId };
+                        state.coverPath = '';
+                        if (coverMediaInput) coverMediaInput.value = picked.mediaId;
+                        const coverPathInput = coverSetting.controlEl.querySelector('input') as HTMLInputElement | null;
+                        if (coverPathInput) coverPathInput.value = '';
+                    },
+                }).open();
             })
         );
 
-        coverUploadInput.addEventListener('change', async () => {
-            const file = coverUploadInput.files?.[0];
-            if (!file) return;
-
-            const account = accounts.find(acc => acc.appId === state.appId);
-            if (!account) {
-                new Notice('未找到公众号账号');
-                return;
-            }
-
-            const uploader = getWechatClient(account.appId, account.appSecret);
-            const upload = await uploader.uploadImage(file, file.name, 'image');
-            if (!upload.success || !upload.mediaId) {
-                new Notice(upload.error || '封面上传失败');
-                return;
-            }
-
-            state.coverMediaId = upload.mediaId;
-            this.coverSource = { type: 'media', mediaId: upload.mediaId };
-            if (coverMediaInput) {
-                coverMediaInput.value = upload.mediaId;
-            }
-            new Notice('封面已上传');
-        });
+        onAccountChanged = () => {
+            void this.tryUseLatestMaterialCover(accounts, state, coverSetting, coverMediaSetting);
+        };
+        void this.tryUseLatestMaterialCover(accounts, state, coverSetting, coverMediaSetting);
 
         // AI cover generation (image only)
         if (getAIService().isAvailable()) {
@@ -207,6 +221,7 @@ export class PublishModal extends Modal {
                                 new Notice('无法处理 AI 生成图片');
                                 return;
                             }
+                            this.coverManuallySet = true;
                             this.coverSource = { type: 'blob', blob, filename: `cover-${Date.now()}.png` };
                             new Notice('AI 封面已生成');
                         } finally {
@@ -313,5 +328,43 @@ export class PublishModal extends Modal {
         }
 
         return null;
+    }
+
+    private async tryUseLatestMaterialCover(
+        accounts: any[],
+        state: { appId: string; coverPath: string; coverMediaId: string },
+        coverSetting: Setting,
+        coverMediaSetting: Setting
+    ): Promise<void> {
+        if (this.coverManuallySet) return;
+        if (state.coverMediaId || state.coverPath) return;
+        if (this.coverSource.type !== 'none') return;
+
+        const account = accounts.find(acc => acc.appId === state.appId);
+        if (!account) return;
+
+        const client = getWechatClient(account.appId, account.appSecret);
+        const result = await client.listMaterials('image', 20, 0);
+        if (!result.success) return;
+
+        const items = result.items || [];
+        if (items.length === 0) return;
+
+        const latest = [...items].sort((a, b) => (b.update_time || 0) - (a.update_time || 0))[0];
+        if (!latest?.media_id) return;
+
+        // Only apply if still untouched.
+        if (this.coverManuallySet) return;
+        if (state.coverMediaId || state.coverPath) return;
+        if (this.coverSource.type !== 'none') return;
+
+        state.coverMediaId = latest.media_id;
+        this.coverSource = { type: 'media', mediaId: latest.media_id };
+
+        const coverMediaInput = coverMediaSetting.controlEl.querySelector('input') as HTMLInputElement | null;
+        if (coverMediaInput) coverMediaInput.value = latest.media_id;
+
+        const coverPathInput = coverSetting.controlEl.querySelector('input') as HTMLInputElement | null;
+        if (coverPathInput) coverPathInput.value = '';
     }
 }

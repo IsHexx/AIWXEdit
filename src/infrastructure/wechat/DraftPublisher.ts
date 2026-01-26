@@ -5,7 +5,14 @@
  */
 
 import { requestUrl } from 'obsidian';
-import type { DraftArticle, DraftResponse, WechatAPIError } from '../../types/wechat.types';
+import type { DraftArticle, DraftBatchGetResponse, DraftResponse, WechatAPIError } from '../../types/wechat.types';
+
+export interface BatchGetDraftsResult {
+    success: boolean;
+    totalCount?: number;
+    items?: DraftBatchGetResponse['item'];
+    error?: string;
+}
 
 /**
  * Draft Publisher
@@ -197,6 +204,49 @@ export class DraftPublisher {
             return {
                 success: false,
                 error: error instanceof Error ? error.message : 'Unknown error getting draft count',
+            };
+        }
+    }
+
+    /**
+     * Batch get drafts (list)
+     */
+    async batchGetDrafts(offset: number = 0, count: number = 20, noContent: boolean = false): Promise<BatchGetDraftsResult> {
+        const url = `https://api.weixin.qq.com/cgi-bin/draft/batchget?access_token=${this.accessToken}`;
+
+        try {
+            const response = await requestUrl({
+                url,
+                method: 'POST',
+                body: JSON.stringify({
+                    offset,
+                    count,
+                    no_content: noContent ? 1 : 0,
+                }),
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            const result = response.json as DraftBatchGetResponse | WechatAPIError;
+            if ((result as WechatAPIError).errcode) {
+                const error = result as WechatAPIError;
+                return {
+                    success: false,
+                    error: `Draft batchget failed: ${error.errcode} - ${error.errmsg}`,
+                };
+            }
+
+            const ok = result as DraftBatchGetResponse;
+            return {
+                success: true,
+                totalCount: ok.total_count,
+                items: ok.item || [],
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Unknown error batch getting drafts',
             };
         }
     }
