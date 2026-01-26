@@ -11,6 +11,7 @@ import type { AIProvider } from '../../types/ai.types';
 import { PROVIDER_DEFAULTS } from '../../types/ai.types';
 import type { WechatAccountConfig } from '../../types/settings.types';
 import { VIEW_TYPE_PUBLISH } from '../views/PublishView';
+import { ThemeMarketModal } from '../modals/ThemeMarketModal';
 import { getAIService } from '../../application/AIService';
 import { DEFAULT_TITLE_PROMPT } from '../../infrastructure/ai/TitleGenerator';
 
@@ -22,14 +23,30 @@ import { DEFAULT_TITLE_PROMPT } from '../../infrastructure/ai/TitleGenerator';
 export class SettingsTab extends PluginSettingTab {
     plugin: WDWXEditPlugin;
     private settingsStore: SettingsStore;
+    private isVisible = false;
 
     constructor(app: App, plugin: WDWXEditPlugin) {
         super(app, plugin);
         this.plugin = plugin;
         this.settingsStore = getSettingsStore();
+
+        // Listen for asset changes to refresh dropdowns
+        this.plugin.registerEvent(
+            (this.plugin.app.workspace as any).on('wdwxedit:assets-changed', () => {
+                if (this.isVisible) {
+                    this.display();
+                }
+            })
+        );
+    }
+
+    hide(): void {
+        this.isVisible = false;
+        super.hide();
     }
 
     display(): void {
+        this.isVisible = true;
         const { containerEl } = this;
         containerEl.empty();
 
@@ -186,6 +203,23 @@ export class SettingsTab extends PluginSettingTab {
         container.createEl('h2', { text: '样式配置' });
 
         const style = this.settingsStore.getStyleConfig();
+        const assetStore = getAssetStore();
+        const themes = assetStore.getThemes();
+
+        new Setting(container)
+            .setName('默认主题')
+            .setDesc('选择文章渲染的默认主题')
+            .addDropdown(dropdown => {
+                themes.forEach(theme => {
+                    dropdown.addOption(theme.id, theme.name);
+                });
+                dropdown.setValue(style.theme)
+                    .onChange(async (value) => {
+                        await this.settingsStore.updateStyleConfig({ theme: value });
+                        // Trigger preview refresh if possible, or reliance on auto-refresh
+                        this.plugin.app.workspace.trigger('wdwxedit:assets-changed'); // Reuse this event to force refresh
+                    });
+            });
 
         new Setting(container)
             .setName('主题颜色')
@@ -244,6 +278,18 @@ export class SettingsTab extends PluginSettingTab {
                 .onChange(async (value) => {
                     await this.settingsStore.updateStyleConfig({ useCustomCSS: value });
                     this.display();
+                })
+            );
+
+
+        new Setting(container)
+            .setName('主题市场')
+            .setDesc('浏览并下载更多社区主题')
+            .addButton(btn => btn
+                .setButtonText('打开主题市场')
+                .setCta()
+                .onClick(() => {
+                    new ThemeMarketModal(this.plugin.app).open();
                 })
             );
 

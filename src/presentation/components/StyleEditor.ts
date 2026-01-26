@@ -40,25 +40,13 @@ export const BUILTIN_THEMES: ThemeDefinition[] = [
     { name: '活力橙', className: 'orange', styles: { primaryColor: '#f59e0b', fontFamily: '等线' } },
     { name: '典雅紫', className: 'purple', styles: { primaryColor: '#8b5cf6', fontFamily: '等线' } },
     { name: '朱砂红', className: 'red', styles: { primaryColor: '#ef4444', fontFamily: '等线' } },
-    { name: '无衬线', className: 'sans', styles: { primaryColor: '#1a73e8', fontFamily: 'sans-serif' } },
-    { name: '衬线体', className: 'serif', styles: { primaryColor: '#2d3748', fontFamily: 'serif' } },
 ];
 
 /**
  * Built-in highlight themes
  */
 export const BUILTIN_HIGHLIGHTS: HighlightDefinition[] = [
-    // Pick 10 distinct highlight.js themes (mirrors md project's common list)
-    { name: 'Monokai', className: 'monokai' },
-    { name: 'Night Owl', className: 'night-owl' },
-    { name: 'NNFX Dark', className: 'nnfx-dark' },
-    { name: 'NNFX Light', className: 'nnfx-light' },
-    { name: 'Nord', className: 'nord' },
-    { name: 'Obsidian', className: 'obsidian' },
-    { name: 'Panda Syntax Dark', className: 'panda-syntax-dark' },
-    { name: 'Panda Syntax Light', className: 'panda-syntax-light' },
-    { name: 'Paraiso Dark', className: 'paraiso-dark' },
-    { name: 'Pojoaque', className: 'pojoaque' },
+    { name: 'GitHub', className: 'github' },
 ];
 
 /**

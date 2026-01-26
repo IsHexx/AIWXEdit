@@ -64,6 +64,13 @@ export class PublishView extends ItemView {
             })
         );
 
+        // Watch for asset changes (theme install/uninstall)
+        this.registerEvent(
+            (this.app.workspace as any).on('wdwxedit:assets-changed', () => {
+                this.refreshStyleEditor();
+            })
+        );
+
         // Initial render
         this.onActiveFileChange();
     }

@@ -9,8 +9,10 @@ export interface ThemeCatalogItem {
     id: string;
     /** Display name */
     name: string;
-    /** Short description */
+    /** Description (legacy alias) */
     description?: string;
+    /** Short description for store */
+    desc?: string;
     /** Remote CSS URL */
     cssUrl: string;
     /** Project homepage */
@@ -21,6 +23,27 @@ export interface ThemeCatalogItem {
     license?: string;
     /** Optional selector replacements (simple string replace) */
     replace?: Array<[string, string]>;
+    /** Whether this entry comes from user custom list */
+    custom?: boolean;
+    /** Tags for categorization */
+    tags?: string[];
+}
+
+/**
+ * Registry item for code highlight themes
+ */
+export interface HighlightCatalogItem {
+    id: string;
+    /** Display name */
+    name: string;
+    /** Description */
+    desc?: string;
+    /** Remote CSS URL */
+    cssUrl: string;
+    /** Author or org */
+    author?: string;
+    /** Tags */
+    tags?: string[];
     /** Whether this entry comes from user custom list */
     custom?: boolean;
 }
