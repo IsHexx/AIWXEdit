@@ -376,9 +376,10 @@ export class PreviewService {
                         element.style.paddingLeft = '0';
                     }
 
-                    if (!inCodeSection) {
+                    if (!inCodeSection && tag !== 'hr') {
                         // WeChat does not paint backgrounds on margins.
                         // Convert margin-top to padding-top to preserve spacing without margin collapse doubling.
+                        // Exception: HR elements should keep margins to avoid inflating their height with padding (since they have bg color).
                         if (mt > 0) {
                             // Note: some blocks may have had padding moved to an inner wrapper above.
                             const pt = parseFloat(element.style.paddingTop) || parseFloat(computed.paddingTop) || 0;

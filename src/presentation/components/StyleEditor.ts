@@ -150,7 +150,7 @@ export class StyleEditor {
         this.createDropdown(row, '字体', FONT_OPTIONS,
             this.currentStyle.fontFamily || '等线',
             (value) => this.events.onFontChanged?.(value),
-            'text'
+            'value'
         );
 
         // Font size selector
@@ -235,6 +235,7 @@ export class StyleEditor {
         COLOR_PRESETS.forEach(color => {
             const option = select.createEl('option');
             const value = color.value;
+            option.value = value;
             option.textContent = color.text;
             if (color.value === currentColor) {
                 option.selected = true;

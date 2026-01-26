@@ -164,11 +164,16 @@ export class ArticleTransformer {
             ? [assetStore.getCustomCSS(), settings.style.customCSS].filter(Boolean).join('\n')
             : '';
 
-        const dynamicCSS = `
-.wx-article { font-family: ${fontFamily}; font-size: ${fontSize}; }
-.wx-article a { color: ${primaryColor}; }
-.wx-article blockquote { border-left-color: ${primaryColor}; }
-        `.trim();
+        const dynamicCSSLines = [
+            `.wx-article { font-family: ${fontFamily} !important; font-size: ${fontSize} !important; }`,
+            `.wx-article a { color: ${primaryColor} !important; }`,
+            `.wx-article blockquote { border-left-color: ${primaryColor} !important; }`,
+            `.wx-article hr { border: none !important; height: 1px !important; background-color: ${primaryColor} !important; }`,
+            `.wx-article strong { color: ${primaryColor} !important; }`,
+            `.wx-article h1, .wx-article h2, .wx-article h3, .wx-article h4, .wx-article h5, .wx-article h6 { color: ${primaryColor} !important; }`
+        ];
+
+        const dynamicCSS = dynamicCSSLines.join('\n');
 
         // Order matters: base -> theme -> highlight -> custom
         const cssBundle = [BASE_WECHAT_CSS, themeCSS, dynamicCSS, highlightCSS, customCSS].filter(Boolean).join('\n\n');
