@@ -1,9 +1,57 @@
 [
     {
-        "name": "Maple", 
+        "name": "Maple",
         "className": "maple",
         "desc": "改自https://github.com/xbmlz/hexo-theme-maple",
         "author": "Sun Booshi"
+    },
+    {
+        "name": "Markdown Nice 橙心",
+        "className": "mdnice-orange-heart",
+        "desc": "Markdown Nice Theme - Orange Heart",
+        "author": "Markdown Nice"
+    },
+    {
+        "name": "Markdown Nice 派",
+        "className": "mdnice-pie",
+        "desc": "Markdown Nice Theme - Pie",
+        "author": "Markdown Nice"
+    },
+    {
+        "name": "Markdown Nice 嫩绿",
+        "className": "mdnice-green-leaf",
+        "desc": "Markdown Nice Theme - Green Leaf",
+        "author": "Markdown Nice"
+    },
+    {
+        "name": "Markdown Nice 水墨",
+        "className": "mdnice-ink",
+        "desc": "Markdown Nice Theme - Ink",
+        "author": "Markdown Nice"
+    },
+    {
+        "name": "Markdown Nice 兰山",
+        "className": "mdnice-blue-mountain",
+        "desc": "Markdown Nice Theme - Blue Mountain",
+        "author": "Markdown Nice"
+    },
+    {
+        "name": "Markdown Nice 奇点",
+        "className": "mdnice-singularity",
+        "desc": "Markdown Nice Theme - Singularity",
+        "author": "Markdown Nice"
+    },
+    {
+        "name": "Markdown Nice 重影",
+        "className": "mdnice-shadow",
+        "desc": "Markdown Nice Theme - Shadow",
+        "author": "Markdown Nice"
+    },
+    {
+        "name": "Markdown Nice 丘比特忙",
+        "className": "mdnice-cupid",
+        "desc": "Markdown Nice Theme - Cupid",
+        "author": "Markdown Nice"
     },
     {
         "name": "MWeb Ayu",

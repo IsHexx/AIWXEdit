@@ -1,0 +1,139 @@
+/* Markdown Nice - Ink (水墨) */
+/* Ported for WDWXEdit */
+
+.wx-article {
+    font-family: "Kaiti SC", STKaiti, "AR PL UKai CN", "AR PL UKai HK", "AR PL UKai TW", "AR PL UKai TW MBE", "AR PL KaitiM GB", KaiTi, KaiTi_GB2312, DFKai-SB, "TW-Kai", serif;
+    font-size: 17px;
+    color: #333;
+    line-height: 1.8;
+    padding: 20px;
+    background-color: #f7f7f7;
+}
+
+.wx-article h1 {
+    font-size: 26px;
+    font-weight: bold;
+    text-align: center;
+    color: #000;
+    margin: 40px 0 20px;
+}
+
+.wx-article h2 {
+    font-size: 22px;
+    font-weight: bold;
+    margin: 40px 0 20px;
+    color: #000;
+    text-align: center;
+    background: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 50 Q 50 100 100 50 T 200 50' stroke='black' fill='none' stroke-width='2' opacity='0.2'/%3E%3C/svg%3E") no-repeat bottom center;
+    background-size: 100px 10px;
+    padding-bottom: 15px;
+}
+
+.wx-article h3 {
+    font-size: 18px;
+    font-weight: bold;
+    margin: 30px 0 15px;
+    color: #000;
+    display: inline-block;
+    border-bottom: 2px solid #333;
+}
+
+.wx-article p {
+    margin: 20px 0;
+    text-align: justify;
+}
+
+.wx-article a {
+    color: #555;
+    text-decoration: none;
+    border-bottom: 1px dotted #333;
+}
+
+.wx-article strong {
+    font-weight: bold;
+    color: #000;
+}
+
+.wx-article blockquote {
+    border-left: none;
+    margin: 20px 0;
+    padding: 20px 30px;
+    background-color: #fff;
+    color: #555;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    font-style: italic;
+    position: relative;
+}
+
+.wx-article blockquote::before {
+    content: "“";
+    font-size: 40px;
+    color: #ddd;
+    position: absolute;
+    top: 0px;
+    left: 10px;
+    font-family: Arial;
+}
+
+.wx-article code {
+    background-color: #fff;
+    color: #333;
+    padding: 2px 5px;
+    border: 1px solid #eee;
+    border-radius: 3px;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+.wx-article pre {
+    background-color: #2b2b2b;
+    padding: 15px;
+    border-radius: 5px;
+    margin: 20px 0;
+    overflow-x: auto;
+    color: #f8f8f2;
+}
+
+.wx-article pre code {
+    background-color: transparent;
+    color: inherit;
+    border: none;
+}
+
+.wx-article ul,
+.wx-article ol {
+    margin: 20px 0;
+    padding-left: 25px;
+}
+
+.wx-article ul li::marker {
+    content: "•";
+    color: #666;
+}
+
+.wx-article hr {
+    border: none;
+    height: 1px;
+    background: #ddd;
+    margin: 50px 0;
+    position: relative;
+}
+
+.wx-article hr::after {
+    content: "❦";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #f7f7f7;
+    padding: 0 10px;
+    color: #999;
+}
+
+.wx-article img {
+    display: block;
+    margin: 30px auto;
+    max-width: 100%;
+    border: 5px solid #fff;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}

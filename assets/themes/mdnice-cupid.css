@@ -1,0 +1,173 @@
+/* Markdown Nice - Cupid (丘比特忙) */
+/* Ported for WDWXEdit */
+
+.wx-article {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    color: #5a5a5a;
+    line-height: 1.8;
+    padding: 20px;
+}
+
+.wx-article h1 {
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    color: #ff6b81;
+    margin: 40px auto 20px;
+    background-color: #fff0f3;
+    padding: 10px 20px;
+    border-radius: 50px;
+    border: 2px dashed #ff6b81;
+    display: table;
+    /* Ensures background wraps text */
+    min-width: 50%;
+}
+
+.wx-article h1::before,
+.wx-article h1::after {
+    content: "♥";
+    font-size: 14px;
+    vertical-align: middle;
+    margin: 0 8px;
+    color: #ff6b81;
+    opacity: 0.6;
+}
+
+.wx-article h2 {
+    font-size: 20px;
+    font-weight: bold;
+    margin: 35px 0 15px;
+    color: #ff6b81;
+    text-align: center;
+    border: 1px dashed #ff6b81;
+    padding: 8px 20px;
+    border-radius: 20px;
+    display: inline-block;
+    background-color: #fff0f3;
+}
+
+.wx-article h3 {
+    font-size: 18px;
+    font-weight: bold;
+    margin: 30px 0 10px;
+    color: #ff6b81;
+}
+
+.wx-article h3::before {
+    content: "❥";
+    margin-right: 6px;
+    color: #ff6b81;
+}
+
+.wx-article p {
+    margin: 15px 0;
+    text-align: justify;
+}
+
+.wx-article a {
+    color: #ff6b81;
+    text-decoration: none;
+    border-bottom: 1px dashed #ff6b81;
+}
+
+.wx-article strong {
+    color: #ff4757;
+    font-weight: bold;
+}
+
+.wx-article blockquote {
+    border-left: 4px solid #ff6b81;
+    margin: 20px 0;
+    padding: 15px 20px;
+    background-color: #fff0f3;
+    color: #777;
+    border-radius: 4px;
+}
+
+.wx-article code {
+    background-color: #fff0f3;
+    color: #ff4757;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-family: monospace;
+}
+
+.wx-article pre {
+    background-color: #fdf2f4;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    overflow-x: auto;
+    border: 1px solid #ffe3e8;
+}
+
+.wx-article pre code {
+    background-color: transparent;
+    color: #555;
+    padding: 0;
+}
+
+.wx-article ul,
+.wx-article ol {
+    margin: 15px 0;
+    padding-left: 25px;
+}
+
+.wx-article ul li::marker {
+    color: #ff6b81;
+    content: "❤";
+    font-size: 12px;
+}
+
+.wx-article ol li::marker {
+    color: #ff6b81;
+    font-weight: bold;
+}
+
+.wx-article hr {
+    border: none;
+    height: 1px;
+    background: #ffb8c6;
+    margin: 40px 0;
+    position: relative;
+}
+
+.wx-article hr::after {
+    content: "LOVE";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #fff;
+    padding: 0 10px;
+    color: #ff6b81;
+    font-size: 12px;
+    letter-spacing: 2px;
+}
+
+.wx-article table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+}
+
+.wx-article th,
+.wx-article td {
+    border: 1px solid #ffe3e8;
+    padding: 8px 10px;
+}
+
+.wx-article th {
+    background-color: #fff0f3;
+    color: #ff6b81;
+    font-weight: bold;
+}
+
+.wx-article img {
+    display: block;
+    margin: 20px auto;
+    max-width: 100%;
+    border-radius: 8px;
+    border: 2px solid #fff0f3;
+}

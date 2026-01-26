@@ -1,0 +1,142 @@
+/* Markdown Nice - Green Leaf (嫩绿) */
+/* Ported for WDWXEdit */
+
+.wx-article {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    color: #333;
+    line-height: 1.75;
+    padding: 20px;
+}
+
+.wx-article h1 {
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    color: #42b983;
+    margin: 30px 0 20px;
+    border-bottom: 2px solid #42b983;
+    padding-bottom: 10px;
+}
+
+.wx-article h2 {
+    font-size: 20px;
+    font-weight: bold;
+    margin: 40px 0 20px;
+    color: #42b983;
+    padding-left: 10px;
+    border-left: 5px solid #42b983;
+    background: rgba(66, 185, 131, 0.1);
+    padding: 5px 10px;
+}
+
+.wx-article h3 {
+    font-size: 18px;
+    font-weight: bold;
+    margin: 30px 0 10px;
+    color: #42b983;
+}
+
+.wx-article h3::before {
+    content: "☘";
+    margin-right: 5px;
+    color: #42b983;
+}
+
+.wx-article p {
+    margin: 15px 0;
+    text-align: justify;
+}
+
+.wx-article a {
+    color: #42b983;
+    text-decoration: none;
+    border-bottom: 1px solid #42b983;
+}
+
+.wx-article strong {
+    color: #42b983;
+    font-weight: bold;
+}
+
+.wx-article blockquote {
+    border-left: 4px solid #42b983;
+    margin: 15px 0;
+    padding: 10px 15px;
+    background-color: rgba(66, 185, 131, 0.05);
+    color: #555;
+    border-radius: 0 5px 5px 0;
+}
+
+.wx-article code {
+    background-color: rgba(66, 185, 131, 0.1);
+    color: #42b983;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+.wx-article pre {
+    background-color: #f6f8fa;
+    padding: 15px;
+    border-radius: 5px;
+    margin: 15px 0;
+    overflow-x: auto;
+    border: 1px solid #e1e4e8;
+}
+
+.wx-article pre code {
+    background-color: transparent;
+    padding: 0;
+    color: #333;
+}
+
+.wx-article ul,
+.wx-article ol {
+    margin: 15px 0;
+    padding-left: 25px;
+}
+
+.wx-article ul li::marker {
+    color: #42b983;
+}
+
+.wx-article ol li::marker {
+    color: #42b983;
+    font-weight: bold;
+}
+
+.wx-article hr {
+    border: none;
+    height: 1px;
+    background: #42b983;
+    margin: 40px 0;
+    opacity: 0.5;
+}
+
+.wx-article table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+}
+
+.wx-article th,
+.wx-article td {
+    border: 1px solid #e1e4e8;
+    padding: 8px 10px;
+}
+
+.wx-article th {
+    background-color: rgba(66, 185, 131, 0.1);
+    color: #42b983;
+    font-weight: bold;
+    border-bottom: 2px solid #42b983;
+}
+
+.wx-article img {
+    display: block;
+    margin: 20px auto;
+    max-width: 100%;
+    border-radius: 5px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
