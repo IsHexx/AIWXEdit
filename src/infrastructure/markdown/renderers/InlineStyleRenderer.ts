@@ -4,6 +4,7 @@
  * Post-processes HTML to inject inline styles for WeChat compatibility.
  * WeChat requires all styles to be inline since external CSS is not supported.
  */
+import { replaceChildrenWithHtml } from '../../../utils/dom';
 
 /**
  * Style mapping for HTML elements
@@ -264,7 +265,7 @@ export class InlineStyleRenderer {
 
         const doc = document.implementation.createHTMLDocument('wdwxedit-inline');
         const container = doc.createElement('div');
-        container.innerHTML = html;
+        replaceChildrenWithHtml(container, html);
         doc.body.appendChild(container);
 
         const styleEl = doc.createElement('style');
@@ -312,7 +313,7 @@ export class InlineStyleRenderer {
                         const existing = elementMap.get(prop);
                         if (!existing || spec > existing.spec || (spec === existing.spec && order >= existing.order)) {
                             const htmlEl = el as HTMLElement;
-                            htmlEl.style.setProperty(prop, value);
+                            htmlEl.setCssProps({ [prop]: value } as Record<string, string>);
                             elementMap.set(prop, { spec, order });
                         }
                     }
@@ -334,14 +335,14 @@ export class InlineStyleRenderer {
 
         const doc = document.implementation.createHTMLDocument('wdwxedit-normalize');
         const container = doc.createElement('div');
-        container.innerHTML = html;
+        replaceChildrenWithHtml(container, html);
         doc.body.appendChild(container);
 
         // Reduce list spacing by removing paragraph margins inside list items
         const listParagraphs = container.querySelectorAll('li p');
         listParagraphs.forEach(p => {
             const el = p as HTMLElement;
-            el.style.setProperty('margin', '0');
+            el.setCssProps({ margin: '0' });
         });
 
         const listItems = container.querySelectorAll('li');
@@ -358,8 +359,10 @@ export class InlineStyleRenderer {
                 el.remove();
                 return;
             }
-            if (!el.style.margin || el.style.margin.trim() === '') {
-                el.style.setProperty('margin', '0.35em 0');
+            const inline = el.getAttribute('style') || '';
+            const hasMargin = /(?:^|;)\s*margin\s*:/i.test(inline);
+            if (!hasMargin) {
+                el.setCssProps({ margin: '0.35em 0' });
             }
         });
 
@@ -374,13 +377,15 @@ export class InlineStyleRenderer {
         if (!sheet) return [];
         const rules: CSSStyleRule[] = [];
         for (const rule of Array.from(sheet.cssRules)) {
-            if (rule.type === CSSRule.STYLE_RULE) {
-                rules.push(rule as CSSStyleRule);
-            } else if (rule.type === CSSRule.MEDIA_RULE) {
-                const mediaRule = rule as CSSMediaRule;
-                for (const inner of Array.from(mediaRule.cssRules)) {
-                    if (inner.type === CSSRule.STYLE_RULE) {
-                        rules.push(inner as CSSStyleRule);
+            if (rule instanceof CSSStyleRule) {
+                rules.push(rule);
+                continue;
+            }
+
+            if (rule instanceof CSSMediaRule) {
+                for (const inner of Array.from(rule.cssRules)) {
+                    if (inner instanceof CSSStyleRule) {
+                        rules.push(inner);
                     }
                 }
             }

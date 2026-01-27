@@ -52,7 +52,7 @@ export default class AIWXEditPlugin extends Plugin {
      * Called when the plugin is enabled
      */
     async onload(): Promise<void> {
-        console.log('AIWXEdit V5: Loading plugin...');
+        console.debug('AIWXEdit V5: Loading plugin...');
 
         // Load settings and assets
         await this.settingsStore.load();
@@ -60,7 +60,7 @@ export default class AIWXEditPlugin extends Plugin {
 
         // Wait for workspace to be ready before registering views
         this.app.workspace.onLayoutReady(() => {
-            this.initializePlugin();
+            void this.initializePlugin();
         });
     }
 
@@ -119,10 +119,10 @@ export default class AIWXEditPlugin extends Plugin {
             );
 
             this.isInitialized = true;
-            console.log('AIWXEdit V5: Plugin initialized successfully');
+            console.debug('AIWXEdit V5: Plugin initialized successfully');
         } catch (error) {
             console.error('AIWXEdit V5: Failed to initialize plugin:', error);
-            new Notice('AIWXEdit 插件初始化失败');
+            new Notice('插件初始化失败');
         }
     }
 
@@ -131,7 +131,7 @@ export default class AIWXEditPlugin extends Plugin {
      * Called when the plugin is disabled
      */
     onunload(): void {
-        console.log('AIWXEdit V5: Unloading plugin...');
+        console.debug('AIWXEdit V5: Unloading plugin...');
     }
 
     /**
@@ -163,7 +163,7 @@ export default class AIWXEditPlugin extends Plugin {
         // Ensure workspace is ready
         if (!this.app.workspace.layoutReady) {
             this.app.workspace.onLayoutReady(() => {
-                setTimeout(() => this.activateView(), 100);
+                setTimeout(() => void this.activateView(), 100);
             });
             return;
         }
@@ -188,7 +188,7 @@ export default class AIWXEditPlugin extends Plugin {
         }
 
         if (leaf) {
-            workspace.revealLeaf(leaf);
+            await workspace.revealLeaf(leaf);
         }
     }
 

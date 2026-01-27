@@ -1,4 +1,5 @@
-import { parse, Root, Rule, Declaration } from 'postcss';
+import { parse, Root, Declaration } from 'postcss';
+import { replaceChildrenWithHtml } from '../../utils/dom';
 
 /**
  * Represents the calculated weight of a CSS selector.
@@ -28,8 +29,8 @@ class SelectorWeight {
 
         // Simplified parser for weight calculation
         // Matches #id, .class, [attr], and element names
-        // Note: usage of lookahead/lookbehind for cleaner splitting
-        const parts = selector.split(/(?=[#\.\[])|(?<=[\]])/);
+        // Only use lookahead (no lookbehind) for iOS compatibility.
+        const parts = selector.split(/(?=[#.[\\[]])/);
 
         for (const part of parts) {
             const trimmed = part.trim();
@@ -83,7 +84,7 @@ export class StyleInliner {
 
         // 1. Prepare the isolated DOM environment
         const wrapper = this.document.createElement('div');
-        wrapper.innerHTML = html;
+        replaceChildrenWithHtml(wrapper, html);
         this.document.body.appendChild(wrapper);
 
         // 2. Parse CSS if changed

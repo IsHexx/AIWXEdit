@@ -45,8 +45,8 @@ export class CoverPickerModal extends Modal {
             this.activeTab = tab;
             wechatTabBtn.toggleClass('is-active', tab === 'wechat');
             localTabBtn.toggleClass('is-active', tab === 'local');
-            wechatPanel.style.display = tab === 'wechat' ? 'block' : 'none';
-            localPanel.style.display = tab === 'local' ? 'block' : 'none';
+            wechatPanel.setCssProps({ display: tab === 'wechat' ? 'block' : 'none' });
+            localPanel.setCssProps({ display: tab === 'local' ? 'block' : 'none' });
         };
 
         wechatTabBtn.addEventListener('click', () => switchTab('wechat'));
@@ -61,7 +61,9 @@ export class CoverPickerModal extends Modal {
         const grid = wechatPanel.createDiv({ cls: 'wdwxedit-cover-grid' });
         this.wechatGrid = grid;
 
-        refreshBtn.addEventListener('click', () => this.loadWechatMaterials());
+        refreshBtn.addEventListener('click', () => {
+            void this.loadWechatMaterials();
+        });
 
         // Local panel
         const localHint = localPanel.createDiv({ cls: 'wdwxedit-cover-hint' });
@@ -71,13 +73,15 @@ export class CoverPickerModal extends Modal {
         const pickLocalBtn = localActions.createEl('button', { text: '选择本地图片...' });
 
         this.fileInput = localPanel.createEl('input', { type: 'file', attr: { accept: 'image/*' } });
-        this.fileInput.style.display = 'none';
+        this.fileInput.setCssProps({ display: 'none' });
 
         pickLocalBtn.addEventListener('click', () => this.fileInput?.click());
-        this.fileInput.addEventListener('change', async () => {
-            const file = this.fileInput?.files?.[0];
-            if (!file) return;
-            await this.uploadLocalCover(file);
+        this.fileInput.addEventListener('change', () => {
+            void (async () => {
+                const file = this.fileInput?.files?.[0];
+                if (!file) return;
+                await this.uploadLocalCover(file);
+            })();
         });
 
         // Default
@@ -147,4 +151,3 @@ export class CoverPickerModal extends Modal {
         this.close();
     }
 }
-

@@ -154,7 +154,7 @@ export class CodeBlockPlugin extends BaseMarkdownPlugin {
     getExtension(): MarkedExtension {
         return {
             renderer: {
-                code: (token: any) => {
+                code: (token: string | { text: string; lang?: string }) => {
                     const code = typeof token === 'string' ? token : token.text;
                     const lang = typeof token === 'string' ? undefined : token.lang;
                     return this.renderCodeBlock(code, lang);

@@ -93,7 +93,7 @@ export class PluginRegistry {
             console.warn(`Plugin ${plugin.meta.id} is already registered, replacing...`);
         }
         this.plugins.set(plugin.meta.id, plugin);
-        plugin.initialize?.();
+        void plugin.initialize?.();
     }
 
     /**

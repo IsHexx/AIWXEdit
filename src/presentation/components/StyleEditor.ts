@@ -153,7 +153,7 @@ export class StyleEditor {
         // Row 2: Custom CSS (Conditional)
         if (this.currentStyle.useCustomCSS) {
             const cssRow = content.createDiv({ cls: 'style-custom-css-row' });
-            cssRow.createEl('label', { text: '自定义CSS:', cls: 'style-custom-css-label' });
+            cssRow.createEl('label', { text: '自定义样式:', cls: 'style-custom-css-label' });
 
             const textarea = cssRow.createEl('textarea', { cls: 'style-custom-css-input' });
             textarea.placeholder = '/* 在这里输入自定义css样式 */';
@@ -197,7 +197,7 @@ export class StyleEditor {
 
         options.forEach(opt => {
             const optionEl = select.createEl('option');
-            const value = (opt as any)[valueField] || opt.value || opt.className || '';
+            const value = opt[valueField] || opt.value || opt.className || '';
             const text = opt.text || opt.name || '';
             optionEl.value = value;
             optionEl.textContent = text;
@@ -236,9 +236,9 @@ export class StyleEditor {
             const theme = themes.find((t) => t.className === value) ?? themes[0];
             const name = theme?.name ?? value;
             const color = theme?.styles?.primaryColor ?? 'var(--interactive-accent)';
-            dot.style.backgroundColor = color;
+            dot.setCssProps({ backgroundColor: color });
             label.textContent = name;
-            (this.currentStyle as any).theme = value;
+            this.currentStyle.theme = value;
         };
 
         applyValue(currentValue);
@@ -247,7 +247,7 @@ export class StyleEditor {
             evt.preventDefault();
             evt.stopPropagation();
 
-            const selectedValue = (this.currentStyle as any).theme || currentValue;
+            const selectedValue = this.currentStyle.theme ?? currentValue;
             const doc = button.ownerDocument;
 
             const menu = new Menu().setNoIcon().setUseNativeMenu(false);
@@ -263,7 +263,7 @@ export class StyleEditor {
 
                     const dotEl = doc.createElement('span');
                     dotEl.className = 'wdwxedit-theme-menu-dot';
-                    dotEl.style.backgroundColor = theme.styles?.primaryColor ?? 'var(--interactive-accent)';
+                    dotEl.setCssProps({ backgroundColor: theme.styles?.primaryColor ?? 'var(--interactive-accent)' });
 
                     const textEl = doc.createElement('span');
                     textEl.className = 'wdwxedit-theme-menu-text';
@@ -271,11 +271,7 @@ export class StyleEditor {
 
                     const checkEl = doc.createElement('span');
                     checkEl.className = 'wdwxedit-theme-menu-check';
-                    checkEl.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M20 6 9 17l-5-5"></path>
-                        </svg>
-                    `;
+                    setIcon(checkEl, 'check');
 
                     rowEl.append(dotEl, textEl, checkEl);
                     frag.append(rowEl);
@@ -326,7 +322,7 @@ export class StyleEditor {
             const highlight = highlights.find((h) => h.className === value) ?? highlights[0];
             const name = highlight?.name ?? value;
             label.textContent = name;
-            (this.currentStyle as any).highlight = value;
+            this.currentStyle.highlight = value;
         };
 
         applyValue(currentValue);
@@ -335,7 +331,7 @@ export class StyleEditor {
             evt.preventDefault();
             evt.stopPropagation();
 
-            const selectedValue = (this.currentStyle as any).highlight || currentValue;
+            const selectedValue = this.currentStyle.highlight ?? currentValue;
             const doc = button.ownerDocument;
             const win = doc.defaultView ?? window;
 
@@ -356,11 +352,7 @@ export class StyleEditor {
 
                     const checkEl = doc.createElement('span');
                     checkEl.className = 'wdwxedit-menu-check';
-                    checkEl.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M20 6 9 17l-5-5"></path>
-                        </svg>
-                    `;
+                    setIcon(checkEl, 'check');
 
                     rowEl.append(textEl, checkEl);
                     frag.append(rowEl);
@@ -406,7 +398,7 @@ export class StyleEditor {
         const applyValue = (value: string) => {
             const font = fonts.find((f) => f.value === value) ?? fonts[0];
             label.textContent = font?.text ?? value;
-            (this.currentStyle as any).fontFamily = value;
+            this.currentStyle.fontFamily = value;
         };
 
         applyValue(currentValue);
@@ -415,7 +407,7 @@ export class StyleEditor {
             evt.preventDefault();
             evt.stopPropagation();
 
-            const selectedValue = (this.currentStyle as any).fontFamily || currentValue;
+            const selectedValue = this.currentStyle.fontFamily ?? currentValue;
             const doc = button.ownerDocument;
             const win = doc.defaultView ?? window;
 
@@ -436,11 +428,7 @@ export class StyleEditor {
 
                     const checkEl = doc.createElement('span');
                     checkEl.className = 'wdwxedit-menu-check';
-                    checkEl.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M20 6 9 17l-5-5"></path>
-                        </svg>
-                    `;
+                    setIcon(checkEl, 'check');
 
                     rowEl.append(textEl, checkEl);
                     frag.append(rowEl);
@@ -486,7 +474,7 @@ export class StyleEditor {
         const applyValue = (value: string) => {
             const size = sizes.find((s) => s.value === value) ?? sizes[0];
             label.textContent = size?.text ?? value;
-            (this.currentStyle as any).fontSize = value;
+            this.currentStyle.fontSize = value;
         };
 
         applyValue(currentValue);
@@ -495,7 +483,7 @@ export class StyleEditor {
             evt.preventDefault();
             evt.stopPropagation();
 
-            const selectedValue = (this.currentStyle as any).fontSize || currentValue;
+            const selectedValue = this.currentStyle.fontSize ?? currentValue;
             const doc = button.ownerDocument;
             const win = doc.defaultView ?? window;
 
@@ -516,11 +504,7 @@ export class StyleEditor {
 
                     const checkEl = doc.createElement('span');
                     checkEl.className = 'wdwxedit-menu-check';
-                    checkEl.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M20 6 9 17l-5-5"></path>
-                        </svg>
-                    `;
+                    setIcon(checkEl, 'check');
 
                     rowEl.append(textEl, checkEl);
                     frag.append(rowEl);
@@ -564,7 +548,7 @@ export class StyleEditor {
             type: 'color',
             cls: 'color-input',
         }) as HTMLInputElement;
-        colorInput.style.display = 'none';
+        colorInput.setCssProps({ display: 'none' });
 
         const getColorLabel = (hex: string) => {
             const preset = COLOR_PRESETS.find((c) => c.value.toLowerCase() === hex.toLowerCase());
@@ -572,9 +556,9 @@ export class StyleEditor {
         };
 
         const applyColor = (hex: string) => {
-            dot.style.backgroundColor = hex;
+            dot.setCssProps({ backgroundColor: hex });
             label.textContent = getColorLabel(hex);
-            (this.currentStyle as any).primaryColor = hex;
+            this.currentStyle.primaryColor = hex;
             this.events.onPrimaryColorChanged?.(hex);
         };
 
@@ -590,7 +574,7 @@ export class StyleEditor {
             evt.preventDefault();
             evt.stopPropagation();
 
-            const selectedValue = (this.currentStyle as any).primaryColor || currentColor;
+            const selectedValue = this.currentStyle.primaryColor ?? currentColor;
             const doc = button.ownerDocument;
             const win = doc.defaultView ?? window;
 
@@ -607,7 +591,7 @@ export class StyleEditor {
 
                     const dotEl = doc.createElement('span');
                     dotEl.className = 'wdwxedit-color-menu-dot';
-                    dotEl.style.backgroundColor = color.value;
+                    dotEl.setCssProps({ backgroundColor: color.value });
 
                     const textEl = doc.createElement('span');
                     textEl.className = 'wdwxedit-menu-text';
@@ -615,11 +599,7 @@ export class StyleEditor {
 
                     const checkEl = doc.createElement('span');
                     checkEl.className = 'wdwxedit-menu-check';
-                    checkEl.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M20 6 9 17l-5-5"></path>
-                        </svg>
-                    `;
+                    setIcon(checkEl, 'check');
 
                     rowEl.append(dotEl, textEl, checkEl);
                     frag.append(rowEl);
@@ -639,7 +619,7 @@ export class StyleEditor {
 
                 const dotEl = doc.createElement('span');
                 dotEl.className = 'wdwxedit-color-menu-dot';
-                dotEl.style.backgroundColor = String(selectedValue);
+                dotEl.setCssProps({ backgroundColor: String(selectedValue) });
 
                 const textEl = doc.createElement('span');
                 textEl.className = 'wdwxedit-menu-text';
@@ -647,11 +627,7 @@ export class StyleEditor {
 
                 const checkEl = doc.createElement('span');
                 checkEl.className = 'wdwxedit-menu-check';
-                checkEl.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M20 6 9 17l-5-5"></path>
-                    </svg>
-                `;
+                setIcon(checkEl, 'check');
 
                 rowEl.append(dotEl, textEl, checkEl);
                 frag.append(rowEl);

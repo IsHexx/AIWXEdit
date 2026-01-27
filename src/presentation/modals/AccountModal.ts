@@ -54,16 +54,16 @@ export class AccountModal extends Modal {
             );
 
         new Setting(contentEl)
-            .setName('AppID')
+            .setName('应用标识')
             .setDesc('在公众号后台获取')
             .addText(text => text
-                .setPlaceholder('wx123...')
+                .setPlaceholder('在此填写')
                 .setValue(state.appId)
                 .onChange(value => { state.appId = value.trim(); })
             );
 
         new Setting(contentEl)
-            .setName('AppSecret')
+            .setName('应用密钥')
             .setDesc('在公众号后台获取')
             .addText(text => {
                 text.setPlaceholder('32位密钥')
@@ -95,62 +95,66 @@ export class AccountModal extends Modal {
         cancelBtn.addEventListener('click', () => this.close());
 
         const testBtn = footer.createEl('button', { text: '测试连接' });
-        testBtn.addEventListener('click', async () => {
-            if (!state.appId || !state.appSecret) {
-                new Notice('请填写 AppID 和 AppSecret');
-                return;
-            }
-            testBtn.disabled = true;
-            const originalText = testBtn.textContent;
-            testBtn.textContent = '测试中...';
-            try {
-                const client = getWechatClient(state.appId, state.appSecret);
-                await client.refreshToken();
-                new Notice('连接成功');
-            } catch (error) {
-                new Notice(error instanceof Error ? error.message : '连接失败');
-            } finally {
-                testBtn.disabled = false;
-                testBtn.textContent = originalText || '测试连接';
-            }
+        testBtn.addEventListener('click', () => {
+            void (async () => {
+                if (!state.appId || !state.appSecret) {
+                    new Notice('请填写应用标识和应用密钥');
+                    return;
+                }
+                testBtn.disabled = true;
+                const originalText = testBtn.textContent;
+                testBtn.textContent = '测试中...';
+                try {
+                    const client = getWechatClient(state.appId, state.appSecret);
+                    await client.refreshToken();
+                    new Notice('连接成功');
+                } catch (error) {
+                    new Notice(error instanceof Error ? error.message : '连接失败');
+                } finally {
+                    testBtn.disabled = false;
+                    testBtn.textContent = originalText || '测试连接';
+                }
+            })();
         });
 
         const saveBtn = footer.createEl('button', { text: '保存', cls: 'mod-cta' });
-        saveBtn.addEventListener('click', async () => {
-            if (!state.appId || !state.appSecret) {
-                new Notice('请填写 AppID 和 AppSecret');
-                return;
-            }
-
-            const store = settingsStore;
-            const originalAppId = this.account?.appId;
-            const newAccount: WechatAccountConfig = {
-                name: state.name || state.appId,
-                appId: state.appId,
-                appSecret: state.appSecret,
-                author: state.author || undefined,
-            };
-
-            if (originalAppId && originalAppId !== state.appId) {
-                await store.removeAccount(originalAppId);
-                await store.addAccount(newAccount);
-            } else if (originalAppId) {
-                await store.updateAccount(originalAppId, newAccount);
-            } else {
-                await store.addAccount(newAccount);
-            }
-
-            if (this.isDefault) {
-                const accounts = store.getAccounts();
-                const index = accounts.findIndex(acc => acc.appId === newAccount.appId);
-                if (index >= 0) {
-                    await store.setDefaultAccount(index);
+        saveBtn.addEventListener('click', () => {
+            void (async () => {
+                if (!state.appId || !state.appSecret) {
+                    new Notice('请填写应用标识和应用密钥');
+                    return;
                 }
-            }
 
-            new Notice('账号已保存');
-            this.onSaved?.();
-            this.close();
+                const store = settingsStore;
+                const originalAppId = this.account?.appId;
+                const newAccount: WechatAccountConfig = {
+                    name: state.name || state.appId,
+                    appId: state.appId,
+                    appSecret: state.appSecret,
+                    author: state.author || undefined,
+                };
+
+                if (originalAppId && originalAppId !== state.appId) {
+                    await store.removeAccount(originalAppId);
+                    await store.addAccount(newAccount);
+                } else if (originalAppId) {
+                    await store.updateAccount(originalAppId, newAccount);
+                } else {
+                    await store.addAccount(newAccount);
+                }
+
+                if (this.isDefault) {
+                    const accounts = store.getAccounts();
+                    const index = accounts.findIndex(acc => acc.appId === newAccount.appId);
+                    if (index >= 0) {
+                        await store.setDefaultAccount(index);
+                    }
+                }
+
+                new Notice('账号已保存');
+                this.onSaved?.();
+                this.close();
+            })();
         });
     }
 

@@ -95,8 +95,6 @@ export class CalloutPlugin extends BaseMarkdownPlugin {
     private calloutRegex = /^>\s*\[!(\w+)\](?:\s+(.+))?\n((?:>.*\n?)*)/gm;
 
     getExtension(): MarkedExtension {
-        const self = this;
-
         return {
             extensions: [{
                 name: 'callout',
@@ -125,13 +123,12 @@ export class CalloutPlugin extends BaseMarkdownPlugin {
                     }
                     return undefined;
                 },
-                renderer(token: any) {
-                    return self.renderCallout(
-                        token.calloutType,
-                        token.content,
-                        token.customTitle
-                    );
-                }
+                renderer: (token: unknown) => {
+                    if (!token || typeof token !== 'object') return '';
+                    const t = token as { calloutType?: unknown; content?: unknown; customTitle?: unknown };
+                    if (typeof t.calloutType !== 'string' || typeof t.content !== 'string') return '';
+                    return this.renderCallout(t.calloutType, t.content, typeof t.customTitle === 'string' ? t.customTitle : undefined);
+                },
             }]
         };
     }

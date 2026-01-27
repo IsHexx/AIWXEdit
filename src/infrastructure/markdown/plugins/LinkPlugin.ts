@@ -67,16 +67,20 @@ export class LinkPlugin extends BaseMarkdownPlugin {
     }
 
     getExtension(): MarkedExtension {
-        const self = this;
-
         // Use type assertion due to marked.js version type inconsistencies
         const renderer = {
-            link(this: any, token: any): string | false {
-                const href = typeof token === 'string' ? token : token.href;
-                const title = typeof token === 'string' ? null : (token.title ?? null);
-                const text = typeof token === 'string' ? '' : token.text;
-                return self.renderLink(href, title, text);
-            }
+            link: (token: unknown): string | false => {
+                const t = (token && typeof token === 'object')
+                    ? (token as { href?: unknown; title?: unknown; text?: unknown })
+                    : undefined;
+
+                const href = typeof token === 'string' ? token : (typeof t?.href === 'string' ? t.href : '');
+                const title = typeof token === 'string' ? null : (typeof t?.title === 'string' ? t.title : null);
+                const text = typeof token === 'string' ? '' : (typeof t?.text === 'string' ? t.text : '');
+
+                if (!href) return text;
+                return this.renderLink(href, title, text);
+            },
         };
 
         return { renderer } as MarkedExtension;

@@ -2,12 +2,14 @@
  * Normalize HTML for more consistent WeChat editor rendering.
  * Keep this minimal: remove empty list items and invisible characters.
  */
+import { replaceChildrenWithHtml } from '../../utils/dom';
+
 export function normalizeWechatHtml(html: string): string {
     if (typeof document === 'undefined') return html;
 
     const doc = document.implementation.createHTMLDocument('wdwxedit-normalize');
     const container = doc.createElement('div');
-    container.innerHTML = html;
+    replaceChildrenWithHtml(container, html);
     doc.body.appendChild(container);
 
     // Remove empty list items (often produced by markdown edge-cases).
@@ -81,7 +83,7 @@ export function postProcessInlinedWechatHtml(html: string): string {
 
     const doc = document.implementation.createHTMLDocument('wdwxedit-post-inline');
     const container = doc.createElement('div');
-    container.innerHTML = html;
+    replaceChildrenWithHtml(container, html);
     doc.body.appendChild(container);
 
     const isTransparent = (value: string) =>
@@ -95,10 +97,10 @@ export function postProcessInlinedWechatHtml(html: string): string {
         const hasBgColor = /(?:^|;)\s*background-color\s*:/i.test(inline);
         if (!hasBg || hasBgColor) return;
 
-        // If background shorthand includes a color, the CSS parser exposes it via `style.backgroundColor`.
-        const bgColor = el.style.backgroundColor || '';
+        // Use computed styles to avoid reading `element.style.*` directly.
+        const bgColor = getComputedStyle(el).backgroundColor || '';
         if (!isTransparent(bgColor)) {
-            el.style.setProperty('background-color', bgColor);
+            el.setCssProps({ 'background-color': bgColor });
         }
     };
 
@@ -124,10 +126,13 @@ export function postProcessInlinedWechatHtml(html: string): string {
 
             const color = normalizeColorToHex(match[1]);
 
-            const font = doc.createElement('font');
-            font.setAttribute('color', color);
-            el.parentNode?.insertBefore(font, el);
-            font.appendChild(el);
+            // Avoid deprecated <font>; keep color as inline CSS.
+            const parentEl = el.parentElement;
+            if (!parentEl) return;
+            const span = parentEl.createEl('span');
+            span.setCssProps({ color });
+            parentEl.insertBefore(span, el);
+            span.appendChild(el);
         });
     });
 

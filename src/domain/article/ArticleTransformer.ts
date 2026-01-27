@@ -5,7 +5,7 @@
  * Combines markdown parsing, plugin processing, and style injection.
  */
 
-import { App, TFile, FrontMatterCache } from 'obsidian';
+import { App, TFile } from 'obsidian';
 import type { ArticleMetadata, ParsedArticle, RenderOptions as ArticleRenderOptions } from '../../types/article.types';
 import { getMarkdownEngine, MarkdownEngine } from '../../infrastructure/markdown/MarkdownEngine';
 import { CodeBlockPlugin, CalloutPlugin, HeadingPlugin, LinkPlugin } from '../../infrastructure/markdown/plugins';
@@ -14,6 +14,7 @@ import { inlineCssWithPostcss } from '../../infrastructure/css/postcssInline';
 import { BASE_WECHAT_CSS } from '../../infrastructure/css/baseWechatCss';
 import { generateHljsFallbackCss } from '../../infrastructure/markdown/plugins/codeThemes';
 import { getSettingsStore, getAssetStore } from '../../infrastructure/storage';
+import { replaceChildrenWithHtml } from '../../utils/dom';
 
 /**
  * Frontmatter regex to strip from content
@@ -303,7 +304,7 @@ export class ArticleTransformer {
 
         const doc = document.implementation.createHTMLDocument('wdwxedit-image-src');
         const container = doc.createElement('div');
-        container.innerHTML = html;
+        replaceChildrenWithHtml(container, html);
         doc.body.appendChild(container);
 
         const images = Array.from(container.querySelectorAll('img'));

@@ -11,6 +11,7 @@ import type { ParsedArticle } from '../types/article.types';
 import { getArticleTransformer } from '../domain/article';
 import { getWechatClient, WechatClient } from '../infrastructure/wechat';
 import { getSettingsStore } from '../infrastructure/storage';
+import { clearChildren, replaceChildrenWithHtml } from '../utils/dom';
 
 /**
  * Publish options
@@ -207,7 +208,7 @@ export class PublishService {
 
         const doc = document.implementation.createHTMLDocument('wdwxedit-upload-images');
         const container = doc.createElement('div');
-        container.innerHTML = content;
+        replaceChildrenWithHtml(container, content);
         doc.body.appendChild(container);
 
         const images = Array.from(container.querySelectorAll('img'));
@@ -253,13 +254,13 @@ export class PublishService {
 
         const doc = document.implementation.createHTMLDocument('wdwxedit-publish-bg');
         const container = doc.createElement('div');
-        container.innerHTML = html;
+        replaceChildrenWithHtml(container, html);
         doc.body.appendChild(container);
 
         const root = container.querySelector<HTMLElement>('.wx-article') as HTMLElement | null;
         if (!root) return html;
 
-        const bg = this.normalizeWechatColor(root.style.backgroundColor || '');
+        const bg = this.normalizeWechatColor(getComputedStyle(root).backgroundColor || '');
         if (!bg || this.isTransparent(bg)) {
             return container.innerHTML;
         }
@@ -271,15 +272,17 @@ export class PublishService {
         table.setAttribute('cellpadding', '0');
         table.setAttribute('cellspacing', '0');
         table.setAttribute('border', '0');
-        table.style.borderCollapse = 'collapse';
-        table.style.width = '100%';
+        table.setCssProps({
+            'border-collapse': 'collapse',
+            width: '100%',
+        });
 
         const tbody = doc.createElement('tbody');
         const tr = doc.createElement('tr');
         const td = doc.createElement('td');
 
         if (bgHex) td.setAttribute('bgcolor', bgHex);
-        td.style.backgroundColor = bg;
+        td.setCssProps({ 'background-color': bg });
 
         // Keep the original root (with all inlined typography/layout), but add a robust background behind it.
         td.appendChild(root);
@@ -287,7 +290,7 @@ export class PublishService {
         tbody.appendChild(tr);
         table.appendChild(tbody);
 
-        container.innerHTML = '';
+        clearChildren(container);
         container.appendChild(table);
         return container.innerHTML;
     }
@@ -368,7 +371,7 @@ export class PublishService {
             }
 
             // Read image data
-            const buffer = await this.app.vault.readBinary(imageFile as TFile);
+            const buffer = await this.app.vault.readBinary(imageFile);
             const blob = new Blob([buffer], { type: this.getMimeType(imageFile.name) });
 
             // Upload

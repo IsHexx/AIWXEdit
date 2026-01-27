@@ -11,6 +11,7 @@ import { getSettingsStore } from '../../infrastructure/storage';
 import { getWechatClient } from '../../infrastructure/wechat';
 import { getAIService } from '../../application';
 import { CoverPickerModal } from './CoverPickerModal';
+import type { WechatAccountConfig } from '../../types/settings.types';
 
 export interface PublishModalOptions {
     article?: ParsedArticle;
@@ -119,7 +120,7 @@ export class PublishModal extends Modal {
 
         const coverSetting = new Setting(contentEl)
             .setName('封面图片路径')
-            .setDesc('支持 vault 路径，如 folder/cover.png 或 /folder/cover.png（留空则使用账号默认封面）');
+            .setDesc('支持库内路径（留空则使用账号默认封面）');
 
         coverSetting.addText(text => text
             .setPlaceholder('封面图片路径')
@@ -133,7 +134,7 @@ export class PublishModal extends Modal {
 
         if (this.article?.metadata.cover) {
             coverSetting.addButton(btn => btn
-                .setButtonText('使用 frontmatter')
+                .setButtonText('使用文档元信息')
                 .onClick(() => {
                     this.coverManuallySet = true;
                     state.coverPath = this.article?.metadata.cover || '';
@@ -146,8 +147,8 @@ export class PublishModal extends Modal {
 
         // Cover media id
         const coverMediaSetting = new Setting(contentEl)
-            .setName('封面素材 ID')
-            .setDesc('已上传素材可直接填 media_id（留空则使用账号默认封面）')
+            .setName('封面素材编号')
+            .setDesc('已上传素材可直接填写素材编号（留空则使用账号默认封面）')
             .addText(text => text
                 .setPlaceholder('可选')
                 .setValue(state.coverMediaId)
@@ -200,35 +201,37 @@ export class PublishModal extends Modal {
         // AI cover generation (image only)
         if (getAIService().isAvailable()) {
             new Setting(contentEl)
-                .setName('AI 生成封面')
-                .setDesc('使用 AI 生成封面图片（图片模式）')
+                .setName('智能生成封面')
+                .setDesc('使用智能生成封面图片（图片模式）')
                 .addButton(btn => btn
                     .setButtonText('生成封面')
-                    .onClick(async () => {
-                        btn.setButtonText('生成中...');
-                        btn.setDisabled(true);
-                        try {
-                            const result = await getAIService().generateCoverImage(
-                                state.title,
-                                state.digest || this.article?.markdownContent?.slice(0, 200) || ''
-                            );
-                            if (!result.success) {
-                                new Notice(result.error || 'AI 生成失败');
-                                return;
-                            }
+                    .onClick(() => {
+                        void (async () => {
+                            btn.setButtonText('生成中...');
+                            btn.setDisabled(true);
+                            try {
+                                const result = await getAIService().generateCoverImage(
+                                    state.title,
+                                    state.digest || this.article?.markdownContent?.slice(0, 200) || ''
+                                );
+                                if (!result.success) {
+                                    new Notice(result.error || 'AI 生成失败');
+                                    return;
+                                }
 
-                            const blob = await this.createCoverBlob(result.imageUrl, result.base64Data);
-                            if (!blob) {
-                                new Notice('无法处理 AI 生成图片');
-                                return;
+                                const blob = await this.createCoverBlob(result.imageUrl, result.base64Data);
+                                if (!blob) {
+                                    new Notice('无法处理 AI 生成图片');
+                                    return;
+                                }
+                                this.coverManuallySet = true;
+                                this.coverSource = { type: 'blob', blob, filename: `cover-${Date.now()}.png` };
+                                new Notice('AI 封面已生成');
+                            } finally {
+                                btn.setButtonText('生成封面');
+                                btn.setDisabled(false);
                             }
-                            this.coverManuallySet = true;
-                            this.coverSource = { type: 'blob', blob, filename: `cover-${Date.now()}.png` };
-                            new Notice('AI 封面已生成');
-                        } finally {
-                            btn.setButtonText('生成封面');
-                            btn.setDisabled(false);
-                        }
+                        })();
                     })
                 );
         }
@@ -244,8 +247,8 @@ export class PublishModal extends Modal {
             );
 
         const draftSetting = new Setting(contentEl)
-            .setName('草稿 ID')
-            .setDesc('填写 media_id 以更新已有草稿');
+            .setName('草稿编号')
+            .setDesc('填写草稿编号以更新已有草稿');
 
         draftSetting.addText(text => text
             .setPlaceholder('可选')
@@ -258,53 +261,55 @@ export class PublishModal extends Modal {
         cancelBtn.addEventListener('click', () => this.close());
 
         const publishBtn = footer.createEl('button', { text: '发布草稿', cls: 'mod-cta' });
-        publishBtn.addEventListener('click', async () => {
-            publishBtn.disabled = true;
-            publishBtn.textContent = '发布中...';
-            try {
-                const account = accounts.find(acc => acc.appId === state.appId);
-                if (!account) {
-                    new Notice('未找到公众号账号');
-                    return;
-                }
-
-                let coverMediaId: string | undefined;
-                let coverPath: string | undefined;
-                if (this.coverSource.type === 'media') {
-                    coverMediaId = this.coverSource.mediaId;
-                } else if (this.coverSource.type === 'blob') {
-                    const upload = await getWechatClient(account.appId, account.appSecret)
-                        .uploadImage(this.coverSource.blob, this.coverSource.filename, 'image');
-                    if (!upload.success || !upload.mediaId) {
-                        new Notice(upload.error || '封面上传失败');
+        publishBtn.addEventListener('click', () => {
+            void (async () => {
+                publishBtn.disabled = true;
+                publishBtn.textContent = '发布中...';
+                try {
+                    const account = accounts.find(acc => acc.appId === state.appId);
+                    if (!account) {
+                        new Notice('未找到公众号账号');
                         return;
                     }
-                    coverMediaId = upload.mediaId;
-                } else if (this.coverSource.type === 'path') {
-                    coverPath = this.coverSource.path;
-                }
 
-                const result = await getPublishService().publish(this.file, {
-                    appId: state.appId,
-                    title: state.title,
-                    digest: state.digest,
-                    author: state.author,
-                    thumbMediaId: coverMediaId,
-                    coverPath,
-                    existingDraftId: state.useExistingDraft ? state.existingDraftId : undefined,
-                });
+                    let coverMediaId: string | undefined;
+                    let coverPath: string | undefined;
+                    if (this.coverSource.type === 'media') {
+                        coverMediaId = this.coverSource.mediaId;
+                    } else if (this.coverSource.type === 'blob') {
+                        const upload = await getWechatClient(account.appId, account.appSecret)
+                            .uploadImage(this.coverSource.blob, this.coverSource.filename, 'image');
+                        if (!upload.success || !upload.mediaId) {
+                            new Notice(upload.error || '封面上传失败');
+                            return;
+                        }
+                        coverMediaId = upload.mediaId;
+                    } else if (this.coverSource.type === 'path') {
+                        coverPath = this.coverSource.path;
+                    }
 
-                if (result.success) {
-                    new Notice(`发布成功，已上传图片 ${result.uploadedImages ?? 0} 张`);
-                    this.onPublished?.();
-                    this.close();
-                } else {
-                    new Notice(result.error || '发布失败');
+                    const result = await getPublishService().publish(this.file, {
+                        appId: state.appId,
+                        title: state.title,
+                        digest: state.digest,
+                        author: state.author,
+                        thumbMediaId: coverMediaId,
+                        coverPath,
+                        existingDraftId: state.useExistingDraft ? state.existingDraftId : undefined,
+                    });
+
+                    if (result.success) {
+                        new Notice(`发布成功，已上传图片 ${result.uploadedImages ?? 0} 张`);
+                        this.onPublished?.();
+                        this.close();
+                    } else {
+                        new Notice(result.error || '发布失败');
+                    }
+                } finally {
+                    publishBtn.disabled = false;
+                    publishBtn.textContent = '发布草稿';
                 }
-            } finally {
-                publishBtn.disabled = false;
-                publishBtn.textContent = '发布草稿';
-            }
+            })();
         });
     }
 
@@ -332,7 +337,7 @@ export class PublishModal extends Modal {
     }
 
     private async tryUseLatestMaterialCover(
-        accounts: any[],
+        accounts: WechatAccountConfig[],
         state: { appId: string; coverPath: string; coverMediaId: string },
         coverSetting: Setting,
         coverMediaSetting: Setting

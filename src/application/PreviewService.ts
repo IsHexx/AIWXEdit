@@ -6,11 +6,12 @@
  */
 
 import { App, TFile } from 'obsidian';
-import type { ParsedArticle, RenderOptions } from '../types/article.types';
+import type { ParsedArticle } from '../types/article.types';
 import type { StyleConfig } from '../types/settings.types';
 import { getArticleTransformer, ArticleTransformer } from '../domain/article';
 import { getSettingsStore } from '../infrastructure/storage';
 import { getWechatClient } from '../infrastructure/wechat';
+import { replaceChildrenWithHtml } from '../utils/dom';
 
 /**
  * Preview state
@@ -123,7 +124,7 @@ export class PreviewService {
     setTheme(themeId: string): void {
         this.updateState({ themeId });
         // Refresh to apply new theme
-        this.refresh();
+        void this.refresh();
     }
 
     /**
@@ -135,7 +136,7 @@ export class PreviewService {
             fontFamily: styles.fontFamily,
             fontSize: styles.fontSize,
         });
-        this.refresh();
+        void this.refresh();
     }
 
     /**
@@ -172,11 +173,21 @@ export class PreviewService {
             return true;
         }
 
-        if (this.copyViaExecCommand(html, plainText)) {
+        if (await this.copyViaClipboardText(plainText)) {
             return true;
         }
 
         return false;
+    }
+
+    private async copyViaClipboardText(text: string): Promise<boolean> {
+        try {
+            if (!navigator.clipboard || !window.isSecureContext) return false;
+            await navigator.clipboard.writeText(text);
+            return true;
+        } catch {
+            return false;
+        }
     }
 
     private async wrapWechatBackgroundForClipboard(html: string): Promise<string> {
@@ -185,13 +196,15 @@ export class PreviewService {
         }
 
         const container = document.createElement('div');
-        container.style.position = 'fixed';
-        container.style.left = '-9999px';
-        container.style.top = '0';
-        container.style.opacity = '0';
-        container.style.pointerEvents = 'none';
-        container.style.userSelect = 'none';
-        container.innerHTML = html;
+        container.setCssProps({
+            position: 'fixed',
+            left: '-9999px',
+            top: '0',
+            opacity: '0',
+            'pointer-events': 'none',
+            'user-select': 'none',
+        });
+        replaceChildrenWithHtml(container, html);
 
         document.body.appendChild(container);
 
@@ -284,6 +297,13 @@ export class PreviewService {
                 return false;
             };
 
+            const getInlineStyleProp = (el: HTMLElement, prop: string): string | null => {
+                const raw = el.getAttribute('style') || '';
+                const re = new RegExp(`(?:^|;)\\s*${prop}\\s*:\\s*([^;]+)`, 'i');
+                const m = raw.match(re);
+                return m ? m[1].trim() : null;
+            };
+
             const blockTagNames = new Set([
                 'div', 'section', 'article',
                 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
@@ -335,7 +355,7 @@ export class PreviewService {
                     // Only fill transparent block backgrounds when they're not inside a colored block.
                     // Otherwise, paragraphs inside callouts/quotes become white boxes.
                     if (isTransparent(bgColor) && !hasNonPageBackgroundAncestor(element)) {
-                        element.style.backgroundColor = fallbackBg;
+                        element.setCssProps({ 'background-color': fallbackBg });
                     }
 
                     // Copy-time margin normalization converts margin to padding to avoid WeChat "double margins".
@@ -349,17 +369,19 @@ export class PreviewService {
                     if (needsSplitBox) {
                         const inner = document.createElement('div');
                         // Preserve the original box styling on the inner wrapper.
-                        inner.style.backgroundColor = bgColor;
-                        inner.style.borderTop = computed.borderTop;
-                        inner.style.borderRight = computed.borderRight;
-                        inner.style.borderBottom = computed.borderBottom;
-                        inner.style.borderLeft = computed.borderLeft;
-                        inner.style.borderRadius = computed.borderRadius;
-                        inner.style.paddingTop = computed.paddingTop;
-                        inner.style.paddingRight = computed.paddingRight;
-                        inner.style.paddingBottom = computed.paddingBottom;
-                        inner.style.paddingLeft = computed.paddingLeft;
-                        inner.style.boxSizing = 'border-box';
+                        inner.setCssProps({
+                            'background-color': bgColor,
+                            'border-top': computed.borderTop,
+                            'border-right': computed.borderRight,
+                            'border-bottom': computed.borderBottom,
+                            'border-left': computed.borderLeft,
+                            'border-radius': computed.borderRadius,
+                            'padding-top': computed.paddingTop,
+                            'padding-right': computed.paddingRight,
+                            'padding-bottom': computed.paddingBottom,
+                            'padding-left': computed.paddingLeft,
+                            'box-sizing': 'border-box',
+                        });
 
                         while (element.firstChild) {
                             inner.appendChild(element.firstChild);
@@ -367,13 +389,15 @@ export class PreviewService {
                         element.appendChild(inner);
 
                         // Make the outer element a neutral spacing container.
-                        element.style.backgroundColor = fallbackBg;
-                        element.style.border = '0';
-                        element.style.borderRadius = '0';
-                        element.style.paddingTop = '0';
-                        element.style.paddingRight = '0';
-                        element.style.paddingBottom = '0';
-                        element.style.paddingLeft = '0';
+                        element.setCssProps({
+                            'background-color': fallbackBg,
+                            border: '0',
+                            'border-radius': '0',
+                            'padding-top': '0',
+                            'padding-right': '0',
+                            'padding-bottom': '0',
+                            'padding-left': '0',
+                        });
                     }
 
                     if (!inCodeSection && tag !== 'hr') {
@@ -382,42 +406,66 @@ export class PreviewService {
                         // Exception: HR elements should keep margins to avoid inflating their height with padding (since they have bg color).
                         if (mt > 0) {
                             // Note: some blocks may have had padding moved to an inner wrapper above.
-                            const pt = parseFloat(element.style.paddingTop) || parseFloat(computed.paddingTop) || 0;
-                            element.style.paddingTop = `${pt + mt}px`;
-                            element.style.marginTop = '0';
+                            const pt = parseFloat(element.getCssPropertyValue('padding-top')) || parseFloat(computed.paddingTop) || 0;
+                            element.setCssProps({
+                                'padding-top': `${pt + mt}px`,
+                                'margin-top': '0',
+                            });
                         }
                         if (mb > 0) {
                             // Keep spacing at the end of the container, otherwise rely on next element's top spacing.
                             if (isLast) {
-                                const pb = parseFloat(element.style.paddingBottom) || parseFloat(computed.paddingBottom) || 0;
-                                element.style.paddingBottom = `${pb + mb}px`;
+                                const pb = parseFloat(element.getCssPropertyValue('padding-bottom')) || parseFloat(computed.paddingBottom) || 0;
+                                element.setCssProps({
+                                    'padding-bottom': `${pb + mb}px`,
+                                });
                             }
-                            element.style.marginBottom = '0';
+                            element.setCssProps({ 'margin-bottom': '0' });
                         }
                     }
 
                     // If the original wrapper gets stripped by WeChat, inherited typography would be lost.
                     // Pin base typography styles onto block nodes (without overriding explicit styles).
-                    if (!isCodeLike && !inCodeSection && baseFontFamily && (!element.style.fontFamily || isInheritLike(element.style.fontFamily))) {
-                        element.style.fontFamily = baseFontFamily;
+                    if (!isCodeLike && !inCodeSection && baseFontFamily) {
+                        const current = getInlineStyleProp(element, 'font-family');
+                        if (!current || isInheritLike(current)) {
+                            element.setCssProps({ 'font-family': baseFontFamily });
+                        }
                     }
 
                     const isHeading = tag === 'h1' || tag === 'h2' || tag === 'h3' || tag === 'h4' || tag === 'h5' || tag === 'h6';
-                    if (!isCodeLike && !inCodeSection && !isHeading && baseFontSize && (!element.style.fontSize || isInheritLike(element.style.fontSize))) {
-                        element.style.fontSize = baseFontSize;
+                    if (!isCodeLike && !inCodeSection && !isHeading && baseFontSize) {
+                        const current = getInlineStyleProp(element, 'font-size');
+                        if (!current || isInheritLike(current)) {
+                            element.setCssProps({ 'font-size': baseFontSize });
+                        }
                     }
 
-                    if (!isCodeLike && !inCodeSection && !isHeading && baseLineHeight && !isInheritLike(baseLineHeight)
-                        && (!element.style.lineHeight || isInheritLike(element.style.lineHeight))) {
-                        element.style.lineHeight = baseLineHeight;
+                    if (
+                        !isCodeLike &&
+                        !inCodeSection &&
+                        !isHeading &&
+                        baseLineHeight &&
+                        !isInheritLike(baseLineHeight)
+                    ) {
+                        const current = getInlineStyleProp(element, 'line-height');
+                        if (!current || isInheritLike(current)) {
+                            element.setCssProps({ 'line-height': baseLineHeight });
+                        }
                     }
 
-                    if (!isCodeLike && !inCodeSection && baseTextAlign && (!element.style.textAlign || isInheritLike(element.style.textAlign))) {
-                        element.style.textAlign = baseTextAlign;
+                    if (!isCodeLike && !inCodeSection && baseTextAlign) {
+                        const current = getInlineStyleProp(element, 'text-align');
+                        if (!current || isInheritLike(current)) {
+                            element.setCssProps({ 'text-align': baseTextAlign });
+                        }
                     }
 
-                    if (!isCodeLike && !inCodeSection && baseColor && (!element.style.color || isInheritLike(element.style.color))) {
-                        element.style.color = baseColor;
+                    if (!isCodeLike && !inCodeSection && baseColor) {
+                        const current = getInlineStyleProp(element, 'color');
+                        if (!current || isInheritLike(current)) {
+                            element.setCssProps({ color: baseColor });
+                        }
                     }
                 }
 
@@ -514,7 +562,7 @@ export class PreviewService {
 
         const doc = document.implementation.createHTMLDocument('wdwxedit-inline-images');
         const container = doc.createElement('div');
-        container.innerHTML = html;
+        replaceChildrenWithHtml(container, html);
         doc.body.appendChild(container);
 
         const images = Array.from(container.querySelectorAll('img'));
@@ -534,7 +582,7 @@ export class PreviewService {
             }
 
             try {
-                const buffer = await this.app.vault.readBinary(imageFile as TFile);
+                const buffer = await this.app.vault.readBinary(imageFile);
                 const mime = this.getMimeType(imageFile.name);
                 const base64 = this.arrayBufferToBase64(buffer);
                 img.setAttribute('src', `data:${mime};base64,${base64}`);
@@ -560,7 +608,7 @@ export class PreviewService {
 
         const doc = document.implementation.createHTMLDocument('wdwxedit-upload-clipboard');
         const container = doc.createElement('div');
-        container.innerHTML = html;
+        replaceChildrenWithHtml(container, html);
         doc.body.appendChild(container);
 
         const images = Array.from(container.querySelectorAll('img'));
@@ -649,15 +697,22 @@ export class PreviewService {
     private extractPlainText(html: string): string {
         const doc = document.implementation.createHTMLDocument('wdwxedit-plain-text');
         const container = doc.createElement('div');
-        container.innerHTML = html;
+        replaceChildrenWithHtml(container, html);
         doc.body.appendChild(container);
         return (container.textContent || '').trim();
     }
 
     private copyViaElectron(html: string, plainText: string): boolean {
         try {
-            const w = window as any;
-            const electron = w?.require ? w.require('electron') : undefined;
+            type ElectronClipboard = {
+                write: (data: { html: string; text: string }) => void;
+            };
+            type ElectronModule = { clipboard?: ElectronClipboard };
+
+            const w = window as Window & { require?: (module: string) => unknown };
+            const electron = typeof w.require === 'function'
+                ? (w.require('electron') as ElectronModule)
+                : undefined;
             const clipboard = electron?.clipboard;
             if (clipboard && typeof clipboard.write === 'function') {
                 clipboard.write({ html, text: plainText });
@@ -695,61 +750,7 @@ export class PreviewService {
         }
     }
 
-    private copyViaExecCommand(html: string, plainText: string): boolean {
-        try {
-            const selection = window.getSelection();
-            if (!selection) return false;
-
-            const container = document.createElement('div');
-            container.innerHTML = html;
-            container.contentEditable = 'true';
-            container.style.position = 'fixed';
-            container.style.left = '-9999px';
-            container.style.top = '0';
-            container.style.opacity = '0';
-            container.style.pointerEvents = 'none';
-            container.style.userSelect = 'text';
-
-            document.body.appendChild(container);
-
-            const range = document.createRange();
-            const wrapper = container.firstElementChild as HTMLElement | null;
-            if (wrapper && wrapper.classList.contains('wx-article')) {
-                range.selectNode(wrapper);
-            } else {
-                range.selectNodeContents(container);
-            }
-            selection.removeAllRanges();
-            selection.addRange(range);
-
-            (container as any).focus?.();
-
-            let successful = document.execCommand('copy');
-
-            selection.removeAllRanges();
-            document.body.removeChild(container);
-
-            if (successful) return true;
-
-            const textarea = document.createElement('textarea');
-            textarea.value = plainText;
-            textarea.style.position = 'fixed';
-            textarea.style.left = '-9999px';
-            textarea.style.top = '0';
-            textarea.style.opacity = '0';
-            textarea.style.pointerEvents = 'none';
-
-            document.body.appendChild(textarea);
-            textarea.select();
-            textarea.setSelectionRange(0, textarea.value.length);
-            successful = document.execCommand('copy');
-            document.body.removeChild(textarea);
-
-            return successful;
-        } catch {
-            return false;
-        }
-    }
+    // Intentionally no `execCommand` fallback: it is deprecated and blocked in some contexts.
 }
 
 /**

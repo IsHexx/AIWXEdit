@@ -45,13 +45,9 @@ export class HeadingPlugin extends BaseMarkdownPlugin {
     }
 
     getExtension(): MarkedExtension {
-        const self = this;
-
         return {
             renderer: {
-                heading(text: string, level: number): string {
-                    return self.renderHeading(text, level);
-                }
+                heading: (text: string, level: number): string => this.renderHeading(text, level),
             }
         };
     }

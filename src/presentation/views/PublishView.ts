@@ -4,12 +4,13 @@
  * Main view for previewing and publishing articles to WeChat.
  */
 
-import { ItemView, WorkspaceLeaf, TFile, Notice, MarkdownView } from 'obsidian';
+import { ItemView, WorkspaceLeaf, Notice, setIcon, type EventRef } from 'obsidian';
 import type AIWXEditPlugin from '../../plugin';
 import { getPreviewService, PreviewService } from '../../application';
 import { StyleEditor, type StyleEditorEvents, BUILTIN_THEMES, BUILTIN_HIGHLIGHTS } from '../components';
 import { getSettingsStore, getAssetStore } from '../../infrastructure/storage';
 import { PublishModal } from '../modals/PublishModal';
+import { replaceChildrenWithHtml } from '../../utils/dom';
 
 export const VIEW_TYPE_PUBLISH = 'aiwxedit-publish-view';
 
@@ -25,7 +26,6 @@ export class PublishView extends ItemView {
     private toolbarEl: HTMLElement | null = null;
     private styleEditor: StyleEditor | null = null;
     private styleEditorContainer: HTMLElement | null = null;
-    private dynamicStyleEl: HTMLStyleElement | null = null;
 
     constructor(leaf: WorkspaceLeaf, plugin: AIWXEditPlugin) {
         super(leaf);
@@ -68,23 +68,27 @@ export class PublishView extends ItemView {
         // Watch for active file changes
         this.registerEvent(
             this.app.workspace.on('active-leaf-change', () => {
-                this.onActiveFileChange();
+                void this.onActiveFileChange();
             })
         );
 
         // Watch for asset changes (theme install/uninstall)
+        const workspace = this.app.workspace as unknown as {
+            on: (name: string, callback: () => void) => EventRef;
+        };
         this.registerEvent(
-            (this.app.workspace as any).on('wdwxedit:assets-changed', () => {
+            workspace.on('wdwxedit:assets-changed', () => {
                 this.refreshStyleEditor();
             })
         );
 
         // Initial render
-        this.onActiveFileChange();
+        void this.onActiveFileChange();
     }
 
-    async onClose(): Promise<void> {
+    onClose(): Promise<void> {
         this.contentEl.empty();
+        return Promise.resolve();
     }
 
     /**
@@ -93,10 +97,6 @@ export class PublishView extends ItemView {
     private buildUI(): void {
         this.contentEl.empty();
         this.contentEl.addClass('wdwxedit-publish-view');
-
-        // Dynamic style element for theme switching
-        this.dynamicStyleEl = this.contentEl.createEl('style', { cls: 'wdwxedit-dynamic-styles' });
-        this.updateDynamicStyles();
 
         // Top bar (toolbar + style row)
         const topBar = this.contentEl.createDiv({ cls: 'wdwxedit-topbar' });
@@ -111,21 +111,17 @@ export class PublishView extends ItemView {
 
         // Preview container
         this.previewEl = this.contentEl.createDiv({ cls: 'wdwxedit-preview' });
-        this.previewEl.innerHTML = `
-            <div class="wdwxedit-empty-state">
-                <p>打开一个 Markdown 文件以预览</p>
-            </div>
-        `;
+        replaceChildrenWithHtml(
+            this.previewEl,
+            `<div class="wdwxedit-empty-state"><p>打开一个 Markdown 文件以预览</p></div>`
+        );
     }
 
     /**
      * Update dynamic styles for theme switching
      */
     private updateDynamicStyles(): void {
-        if (!this.dynamicStyleEl) return;
-
-        // Keep preview styles aligned with published HTML (inline styles).
-        this.dynamicStyleEl.textContent = '';
+        // Reserved for future theme switching. Avoid injecting <style> tags; Obsidian loads styles.css.
     }
 
     private getAccounts() {
@@ -176,7 +172,7 @@ export class PublishView extends ItemView {
             type: 'file',
             attr: { accept: 'image/*' }
         });
-        coverInput.style.display = 'none';
+        coverInput.setCssProps({ display: 'none' });
 
         // Cover options container
         const coverGroup = leftSection.createDiv({ cls: 'wdwxedit-toolbar-group wdwxedit-cover-group' });
@@ -202,8 +198,7 @@ export class PublishView extends ItemView {
             cls: 'wdwxedit-mini-btn',
             attr: { type: 'button' }
         });
-        selectFileBtn.style.display = 'none';
-        selectFileBtn.style.marginLeft = '4px';
+        selectFileBtn.setCssProps({ display: 'none', marginLeft: '4px' });
 
         selectFileBtn.addEventListener('click', () => {
             coverInput.click();
@@ -214,14 +209,14 @@ export class PublishView extends ItemView {
             if (defaultRadio.checked) {
                 this.selectedCover = null;
                 coverInput.value = '';
-                selectFileBtn.style.display = 'none';
+                selectFileBtn.setCssProps({ display: 'none' });
                 selectFileBtn.textContent = '选择图片';
             }
         });
 
         uploadRadio.addEventListener('change', () => {
             if (uploadRadio.checked) {
-                selectFileBtn.style.display = 'inline-flex';
+                selectFileBtn.setCssProps({ display: 'inline-flex' });
             }
         });
 
@@ -231,7 +226,7 @@ export class PublishView extends ItemView {
             if (file) {
                 this.selectedCover = file;
                 uploadRadio.checked = true;
-                selectFileBtn.style.display = 'inline-flex';
+                selectFileBtn.setCssProps({ display: 'inline-flex' });
                 selectFileBtn.textContent = file.name.length > 8 ? file.name.slice(0, 8) + '...' : file.name;
                 new Notice(`已选择封面: ${file.name}`);
             }
@@ -245,26 +240,20 @@ export class PublishView extends ItemView {
             cls: 'wdwxedit-icon-btn',
             attr: { 'aria-label': '复制到剪贴板' }
         });
-        copyBtn.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect x="8" y="8" width="14" height="14" rx="2" ry="2"></rect>
-                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
-            </svg>
-        `;
-        copyBtn.addEventListener('click', () => this.copyToClipboard());
+        setIcon(copyBtn, 'copy');
+        copyBtn.addEventListener('click', () => {
+            void this.copyToClipboard();
+        });
 
         // Publish button (Send)
         const sendBtn = rightSection.createEl('button', {
             cls: 'wdwxedit-icon-btn',
             attr: { 'aria-label': '发布到公众号' }
         });
-        sendBtn.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M22 2 11 13"></path>
-                <path d="M22 2 15 22 11 13 2 9 22 2z"></path>
-            </svg>
-        `;
-        sendBtn.addEventListener('click', () => this.publish());
+        setIcon(sendBtn, 'send');
+        sendBtn.addEventListener('click', () => {
+            this.publish();
+        });
     }
 
     private selectedCover: File | null = null;
@@ -289,60 +278,74 @@ export class PublishView extends ItemView {
         });
 
         const events: StyleEditorEvents = {
-            onThemeChanged: async (themeClassName) => {
-                const theme = BUILTIN_THEMES.find(t => t.className === themeClassName);
-                if (theme?.styles) {
-                    const styles = theme.styles;
-                    if (styles.primaryColor) {
-                        await getSettingsStore().updateStyleConfig({ primaryColor: styles.primaryColor });
+            onThemeChanged: (themeClassName) => {
+                void (async () => {
+                    const theme = BUILTIN_THEMES.find(t => t.className === themeClassName);
+                    if (theme?.styles) {
+                        const styles = theme.styles;
+                        if (styles.primaryColor) {
+                            await getSettingsStore().updateStyleConfig({ primaryColor: styles.primaryColor });
+                        }
+                        if (styles.fontFamily) {
+                            await getSettingsStore().updateStyleConfig({ fontFamily: styles.fontFamily });
+                        }
                     }
-                    if (styles.fontFamily) {
-                        await getSettingsStore().updateStyleConfig({ fontFamily: styles.fontFamily });
-                    }
-                }
-                await getSettingsStore().updateStyleConfig({ theme: themeClassName });
-                this.updateDynamicStyles();
-                await this.previewService.refresh();
+                    await getSettingsStore().updateStyleConfig({ theme: themeClassName });
+                    this.updateDynamicStyles();
+                    await this.previewService.refresh();
+                })();
             },
-            onHighlightChanged: async (highlight) => {
-                await getSettingsStore().updateStyleConfig({ highlight });
-                this.updateDynamicStyles();
-                await this.previewService.refresh();
+            onHighlightChanged: (highlight) => {
+                void (async () => {
+                    await getSettingsStore().updateStyleConfig({ highlight });
+                    this.updateDynamicStyles();
+                    await this.previewService.refresh();
+                })();
             },
-            onFontChanged: async (font) => {
-                await getSettingsStore().updateStyleConfig({ fontFamily: font });
-                this.updateDynamicStyles();
-                await this.previewService.refresh();
+            onFontChanged: (font) => {
+                void (async () => {
+                    await getSettingsStore().updateStyleConfig({ fontFamily: font });
+                    this.updateDynamicStyles();
+                    await this.previewService.refresh();
+                })();
             },
-            onFontSizeChanged: async (size) => {
-                await getSettingsStore().updateStyleConfig({ fontSize: size });
-                this.updateDynamicStyles();
-                await this.previewService.refresh();
+            onFontSizeChanged: (size) => {
+                void (async () => {
+                    await getSettingsStore().updateStyleConfig({ fontSize: size });
+                    this.updateDynamicStyles();
+                    await this.previewService.refresh();
+                })();
             },
-            onPrimaryColorChanged: async (color) => {
-                await getSettingsStore().updateStyleConfig({ primaryColor: color });
-                this.updateDynamicStyles();
-                await this.previewService.refresh();
+            onPrimaryColorChanged: (color) => {
+                void (async () => {
+                    await getSettingsStore().updateStyleConfig({ primaryColor: color });
+                    this.updateDynamicStyles();
+                    await this.previewService.refresh();
+                })();
             },
-            onCustomCSSChanged: async (css) => {
-                await getSettingsStore().updateStyleConfig({ customCSS: css });
-                await this.previewService.refresh();
+            onCustomCSSChanged: (css) => {
+                void (async () => {
+                    await getSettingsStore().updateStyleConfig({ customCSS: css });
+                    await this.previewService.refresh();
+                })();
             },
-            onStyleReset: async () => {
-                // Reset to defaults
-                await getSettingsStore().updateStyleConfig({
-                    theme: 'default',
-                    highlight: 'github',
-                    fontFamily: '等线',
-                    fontSize: '16px',
-                    primaryColor: '#1a73e8',
-                    customCSS: ''
-                });
-                // Re-render editor
-                this.refreshStyleEditor();
-                this.updateDynamicStyles();
-                await this.previewService.refresh();
-                new Notice('样式已重置');
+            onStyleReset: () => {
+                void (async () => {
+                    // Reset to defaults
+                    await getSettingsStore().updateStyleConfig({
+                        theme: 'default',
+                        highlight: 'github',
+                        fontFamily: '等线',
+                        fontSize: '16px',
+                        primaryColor: '#1a73e8',
+                        customCSS: ''
+                    });
+                    // Re-render editor
+                    this.refreshStyleEditor();
+                    this.updateDynamicStyles();
+                    await this.previewService.refresh();
+                    new Notice('样式已重置');
+                })();
             }
         };
 
@@ -389,15 +392,14 @@ export class PublishView extends ItemView {
         if (!this.previewEl) return;
 
         if (!html) {
-            this.previewEl.innerHTML = `
-                <div class="wdwxedit-empty-state">
-                    <p>打开一个 Markdown 文件以预览</p>
-                </div>
-            `;
+            replaceChildrenWithHtml(
+                this.previewEl,
+                `<div class="wdwxedit-empty-state"><p>打开一个 Markdown 文件以预览</p></div>`
+            );
             return;
         }
 
-        this.previewEl.innerHTML = html;
+        replaceChildrenWithHtml(this.previewEl, html);
     }
 
     /**
@@ -415,7 +417,7 @@ export class PublishView extends ItemView {
     /**
      * Publish article
      */
-    private async publish(): Promise<void> {
+    private publish(): void {
         const state = this.previewService.getState();
         if (!state.file) {
             new Notice('请先打开一个 Markdown 文件');
@@ -424,7 +426,9 @@ export class PublishView extends ItemView {
 
         new PublishModal(this.app, state.file, {
             article: state.article || undefined,
-            onPublished: () => this.refresh(),
+            onPublished: () => {
+                void this.refresh();
+            },
             coverOverride: this.selectedCover ? {
                 type: 'blob',
                 blob: this.selectedCover,
