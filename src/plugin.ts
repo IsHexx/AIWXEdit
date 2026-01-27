@@ -1,5 +1,5 @@
 /**
- * WDWXEdit V5 - Plugin Entry Point
+ * AIWXEdit V5 - Plugin Entry Point
  * 
  * Main plugin class that handles lifecycle and coordinates all modules.
  * 
@@ -17,7 +17,7 @@ import { getPublishService, getPreviewService, getAIService } from './applicatio
 import { getArticleTransformer } from './domain/article';
 
 /**
- * WDWXEdit Plugin
+ * AIWXEdit Plugin
  * 
  * Obsidian plugin for publishing notes to WeChat Official Account.
  * Features include:
@@ -26,7 +26,7 @@ import { getArticleTransformer } from './domain/article';
  * - AI-powered title and cover generation
  * - Multiple account support
  */
-export default class WDWXEditPlugin extends Plugin {
+export default class AIWXEditPlugin extends Plugin {
     /** Settings store instance */
     private settingsStore: SettingsStore;
 
@@ -52,7 +52,7 @@ export default class WDWXEditPlugin extends Plugin {
      * Called when the plugin is enabled
      */
     async onload(): Promise<void> {
-        console.log('WDWXEdit V5: Loading plugin...');
+        console.log('AIWXEdit V5: Loading plugin...');
 
         // Load settings and assets
         await this.settingsStore.load();
@@ -119,10 +119,10 @@ export default class WDWXEditPlugin extends Plugin {
             );
 
             this.isInitialized = true;
-            console.log('WDWXEdit V5: Plugin initialized successfully');
+            console.log('AIWXEdit V5: Plugin initialized successfully');
         } catch (error) {
-            console.error('WDWXEdit V5: Failed to initialize plugin:', error);
-            new Notice('WDWXEdit 插件初始化失败');
+            console.error('AIWXEdit V5: Failed to initialize plugin:', error);
+            new Notice('AIWXEdit 插件初始化失败');
         }
     }
 
@@ -131,7 +131,7 @@ export default class WDWXEditPlugin extends Plugin {
      * Called when the plugin is disabled
      */
     onunload(): void {
-        console.log('WDWXEdit V5: Unloading plugin...');
+        console.log('AIWXEdit V5: Unloading plugin...');
     }
 
     /**

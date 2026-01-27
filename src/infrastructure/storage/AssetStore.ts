@@ -709,7 +709,7 @@ export class AssetStore {
      */
     private getDefaultThemeCSS(): string {
         return `
-/* WDWXEdit V5 - Default Theme */
+/* AIWXEdit V5 - Default Theme */
 
 .wx-article {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;

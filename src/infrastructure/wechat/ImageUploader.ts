@@ -114,7 +114,7 @@ export class ImageUploader {
         data: Blob,
         filename: string
     ): Promise<{ buffer: ArrayBuffer; contentType: string }> {
-        const boundary = `----WDWXEditBoundary${Date.now()}`;
+        const boundary = `----AIWXEditBoundary${Date.now()}`;
         const contentType = `multipart/form-data; boundary=${boundary}`;
 
         // Get blob as ArrayBuffer

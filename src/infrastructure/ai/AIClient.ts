@@ -83,7 +83,7 @@ export class AIClient {
         // OpenRouter requires additional headers
         if (this.config.provider === 'openrouter') {
             headers['HTTP-Referer'] = 'https://obsidian.md';
-            headers['X-Title'] = 'WDWXEdit';
+            headers['X-Title'] = 'AIWXEdit';
         }
 
         try {
@@ -157,7 +157,7 @@ export class AIClient {
 
         if (this.config.provider === 'openrouter') {
             headers['HTTP-Referer'] = 'https://obsidian.md';
-            headers['X-Title'] = 'WDWXEdit';
+            headers['X-Title'] = 'AIWXEdit';
         }
 
         try {

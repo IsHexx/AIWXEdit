@@ -1,5 +1,5 @@
 /**
- * WDWXEdit V5 - Type Definitions
+ * AIWXEdit V5 - Type Definitions
  * 
  * This module exports all type definitions used across the application.
  * Types are organized by domain area for clarity.
