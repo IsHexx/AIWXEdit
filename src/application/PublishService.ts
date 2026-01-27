@@ -257,7 +257,7 @@ export class PublishService {
         replaceChildrenWithHtml(container, html);
         doc.body.appendChild(container);
 
-        const root = container.querySelector<HTMLElement>('.wx-article') as HTMLElement | null;
+        const root = container.querySelector<HTMLElement>('.wx-article');
         if (!root) return html;
 
         const bg = this.normalizeWechatColor(getComputedStyle(root).backgroundColor || '');

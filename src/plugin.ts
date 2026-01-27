@@ -7,9 +7,8 @@
  * @license MIT
  */
 
-import { Plugin, WorkspaceLeaf, App, PluginManifest, TFile, TFolder, Notice } from 'obsidian';
+import { Plugin, WorkspaceLeaf, App, PluginManifest, TFile, Notice } from 'obsidian';
 import type { PluginSettings } from './types/settings.types';
-import { DEFAULT_SETTINGS } from './types/settings.types';
 import { SettingsStore, getSettingsStore, AssetStore, getAssetStore } from './infrastructure/storage';
 import { PublishView, VIEW_TYPE_PUBLISH, SettingsTab, PublishModal } from './presentation';
 import type { ParsedArticle } from './types/article.types';

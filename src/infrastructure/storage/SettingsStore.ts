@@ -262,7 +262,7 @@ export class SettingsStore {
             const imported = JSON.parse(json) as Partial<PluginSettings>;
             this.settings = this.mergeSettings(DEFAULT_SETTINGS, imported);
             await this.save();
-        } catch (error) {
+        } catch {
             throw new Error('Invalid settings JSON');
         }
     }

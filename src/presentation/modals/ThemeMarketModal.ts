@@ -192,7 +192,8 @@ export class ThemeMarketModal extends Modal {
                         }
                         new Notice(`下载成功: ${item.name}`);
                     } catch (error) {
-                        new Notice(`下载失败: ${error}`);
+                        const message = error instanceof Error ? error.message : String(error);
+                        new Notice(`下载失败: ${message}`);
                         console.error(error);
                     }
                 }
@@ -226,9 +227,9 @@ export class ThemeMarketModal extends Modal {
         try {
             let count = 0;
             if (isTheme) {
-                count = await this.assetStore.installThemes(toInstall as ThemeCatalogItem[]);
+                count = await this.assetStore.installThemes(toInstall);
             } else {
-                count = await this.assetStore.installHighlights(toInstall as HighlightCatalogItem[]);
+                count = await this.assetStore.installHighlights(toInstall);
             }
             new Notice(`批量下载完成，成功安装 ${count} 个项目`);
         } catch (error) {
@@ -261,9 +262,9 @@ export class ThemeMarketModal extends Modal {
         try {
             let count = 0;
             if (isTheme) {
-                count = await this.assetStore.uninstallThemes(toUninstall as ThemeCatalogItem[]);
+                count = await this.assetStore.uninstallThemes(toUninstall);
             } else {
-                count = await this.assetStore.uninstallHighlights(toUninstall as HighlightCatalogItem[]);
+                count = await this.assetStore.uninstallHighlights(toUninstall);
             }
             new Notice(`批量卸载完成，成功卸载 ${count} 个项目`);
         } catch (error) {

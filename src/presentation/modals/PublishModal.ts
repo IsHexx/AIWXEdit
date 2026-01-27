@@ -139,7 +139,7 @@ export class PublishModal extends Modal {
                     this.coverManuallySet = true;
                     state.coverPath = this.article?.metadata.cover || '';
                     this.coverSource = state.coverPath ? { type: 'path', path: state.coverPath } : { type: 'none' };
-                    const inputEl = coverSetting.controlEl.querySelector('input') as HTMLInputElement | null;
+                    const inputEl = coverSetting.controlEl.querySelector('input');
                     if (inputEl) inputEl.value = state.coverPath;
                 })
             );
@@ -166,7 +166,7 @@ export class PublishModal extends Modal {
             );
         coverMediaSetting.settingEl.addClass('wdwxedit-cover-media-row');
 
-        const coverMediaInput = coverMediaSetting.controlEl.querySelector('input') as HTMLInputElement | null;
+        const coverMediaInput = coverMediaSetting.controlEl.querySelector('input');
 
         coverMediaSetting.addButton(btn => btn
             .setButtonText('上传封面')
@@ -186,7 +186,7 @@ export class PublishModal extends Modal {
                         this.coverSource = { type: 'media', mediaId: picked.mediaId };
                         state.coverPath = '';
                         if (coverMediaInput) coverMediaInput.value = picked.mediaId;
-                        const coverPathInput = coverSetting.controlEl.querySelector('input') as HTMLInputElement | null;
+                        const coverPathInput = coverSetting.controlEl.querySelector('input');
                         if (coverPathInput) coverPathInput.value = '';
                     },
                 }).open();
@@ -367,10 +367,10 @@ export class PublishModal extends Modal {
         state.coverMediaId = latest.media_id;
         this.coverSource = { type: 'media', mediaId: latest.media_id };
 
-        const coverMediaInput = coverMediaSetting.controlEl.querySelector('input') as HTMLInputElement | null;
+        const coverMediaInput = coverMediaSetting.controlEl.querySelector('input');
         if (coverMediaInput) coverMediaInput.value = latest.media_id;
 
-        const coverPathInput = coverSetting.controlEl.querySelector('input') as HTMLInputElement | null;
+        const coverPathInput = coverSetting.controlEl.querySelector('input');
         if (coverPathInput) coverPathInput.value = '';
     }
 }

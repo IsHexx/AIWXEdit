@@ -108,14 +108,14 @@ export class TitleGenerator {
      */
     private parseTitles(response: string): string[] {
         // Split by newlines and clean up
-        const lines = response.split('\n')
-            .map(line => line.trim())
-            // Remove numbering (1. 2. 3. or 1、2、3、 or • -)
-            .map(line => line.replace(/^[\d]+[.、)\]]\s*/, '').replace(/^[•\-\*]\s*/, ''))
-            // Filter empty lines and lines that are too short
-            .filter(line => line.length > 5 && line.length < 50)
-            // Remove quotes if present
-            .map(line => line.replace(/^["「『]/, '').replace(/["」』]$/, ''));
+            const lines = response.split('\n')
+                .map(line => line.trim())
+                // Remove numbering (1. 2. 3. or 1、2、3、 or • -)
+                .map(line => line.replace(/^[\d]+[.、)\]]\s*/, '').replace(/^[•*-]\s*/, ''))
+                // Filter empty lines and lines that are too short
+                .filter(line => line.length > 5 && line.length < 50)
+                // Remove quotes if present
+                .map(line => line.replace(/^["「『]/, '').replace(/["」』]$/, ''));
 
         return lines.slice(0, 10); // Max 10 titles
     }

@@ -123,7 +123,6 @@ export class LinkPlugin extends BaseMarkdownPlugin {
      * Render link with inline URL
      */
     private renderInlineLink(href: string, title: string | null, text: string): string {
-        const titleAttr = title ? ` title="${title}"` : '';
         return `<span style="color: #1a73e8;">${text}</span><span style="color: #57606a; font-size: 0.9em;"> (${href})</span>`;
     }
 

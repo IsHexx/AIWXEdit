@@ -214,7 +214,7 @@ export class SettingsTab extends PluginSettingTab {
                 .addOption('system-ui', '系统默认')
                 .addOption('"PingFang SC", sans-serif', '苹方')
                 .addOption('"Microsoft YaHei", sans-serif', '微软雅黑')
-                .addOption('"Noto Sans SC", sans-serif', 'Noto Sans')
+                .addOption('"Noto Sans SC", sans-serif', '思源黑体')
                 .setValue(style.fontFamily)
                 .onChange((value) => {
                     void this.settingsStore.updateStyleConfig({ fontFamily: value });

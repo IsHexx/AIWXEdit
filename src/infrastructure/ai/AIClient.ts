@@ -9,8 +9,6 @@ import { requestUrl } from 'obsidian';
 import type {
     AIProvider,
     ChatMessage,
-    ChatCompletionRequest,
-    ChatCompletionResponse,
     AIConnectionTestResult,
 } from '../../types/ai.types';
 import { PROVIDER_DEFAULTS } from '../../types/ai.types';
@@ -117,7 +115,7 @@ export class AIClient {
         const startTime = Date.now();
 
         try {
-            const response = await this.chatCompletion([
+            await this.chatCompletion([
                 { role: 'user', content: 'Hi' }
             ], { maxTokens: 5 });
 

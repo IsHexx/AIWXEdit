@@ -5,7 +5,7 @@
  * Uses marked.js with a plugin system for extensibility.
  */
 
-import { Marked, type MarkedExtension, type Token, type TokensList } from 'marked';
+import { Marked, type Token, type TokensList } from 'marked';
 import { PluginRegistry, type MarkdownPlugin } from './plugins/PluginInterface';
 
 /**

@@ -156,7 +156,7 @@ export class StyleEditor {
             cssRow.createEl('label', { text: '自定义样式:', cls: 'style-custom-css-label' });
 
             const textarea = cssRow.createEl('textarea', { cls: 'style-custom-css-input' });
-            textarea.placeholder = '/* 在这里输入自定义css样式 */';
+            textarea.placeholder = '在此输入自定义样式';
             textarea.value = this.currentStyle.customCSS || '';
 
             textarea.oninput = () => {
@@ -547,7 +547,7 @@ export class StyleEditor {
         const colorInput = group.createEl('input', {
             type: 'color',
             cls: 'color-input',
-        }) as HTMLInputElement;
+        });
         colorInput.setCssProps({ display: 'none' });
 
         const getColorLabel = (hex: string) => {

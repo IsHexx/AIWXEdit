@@ -155,7 +155,7 @@ export class StyleInliner {
                         this.mergeDeclaration(applicableStyles, decl, weight, rule.ruleIndex);
                     }
                 }
-            } catch (e) {
+            } catch {
                 // Ignore invalid selector matches (e.g. browser specific pseudo-classes)
             }
         }

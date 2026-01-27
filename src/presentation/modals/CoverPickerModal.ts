@@ -56,7 +56,7 @@ export class CoverPickerModal extends Modal {
         const wechatActions = wechatPanel.createDiv({ cls: 'wdwxedit-cover-actions' });
         const refreshBtn = wechatActions.createEl('button', { text: '刷新最近 20 张' });
         const hint = wechatPanel.createDiv({ cls: 'wdwxedit-cover-hint' });
-        hint.setText('点击图片即可选择（使用素材 media_id）。');
+        hint.setText('点击图片即可选择（使用素材编号）。');
 
         const grid = wechatPanel.createDiv({ cls: 'wdwxedit-cover-grid' });
         this.wechatGrid = grid;
