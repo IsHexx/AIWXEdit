@@ -62,18 +62,15 @@ export class AccountModal extends Modal {
                 .onChange(value => { state.appId = value.trim(); })
             );
 
-        // Obsidian TextComponent doesn't support type=password; use input element directly
-        const secretSetting = new Setting(contentEl)
+        new Setting(contentEl)
             .setName('AppSecret')
-            .setDesc('在公众号后台获取');
-        const secretInput = secretSetting.controlEl.createEl('input', {
-            type: 'password',
-            cls: 'setting-item-control',
-        });
-        secretInput.value = state.appSecret;
-        secretInput.addEventListener('input', () => {
-            state.appSecret = secretInput.value.trim();
-        });
+            .setDesc('在公众号后台获取')
+            .addText(text => {
+                text.setPlaceholder('32位密钥')
+                    .setValue(state.appSecret)
+                    .onChange(value => { state.appSecret = value.trim(); });
+                text.inputEl.type = 'password';
+            });
 
         new Setting(contentEl)
             .setName('默认作者')

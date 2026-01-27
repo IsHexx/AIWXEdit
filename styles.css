@@ -9,6 +9,31 @@
     flex-direction: column;
     height: 100%;
     background: var(--background-primary);
+    padding: 0 20px 0 30px;
+    box-sizing: border-box;
+}
+
+/* Some themes/snippets override view padding; enforce inside leaf content */
+.workspace-leaf-content .wdwxedit-publish-view {
+    padding: 0 20px 0 30px !important;
+}
+
+/* Top bar (toolbar + style row) */
+.wdwxedit-topbar {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 10px 0;
+    padding: 5px 0;
+    border: 1px solid var(--background-modifier-border);
+    border-color: color-mix(in srgb, var(--background-modifier-border) 45%, transparent);
+    border-right-width: 2px;
+    border-bottom-width: 2px;
+    border-radius: 14px;
+    background: var(--background-primary);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    color: var(--text-normal);
+    font-weight: 600;
 }
 
 /* Toolbar */
@@ -16,48 +41,72 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 10px;
-    /* Reduced padding to 10px as requested */
+    padding: 4px 20px 14px;
     border-bottom: 1px solid var(--background-modifier-border);
-    background: var(--background-secondary);
-    gap: 16px;
+    background: transparent;
+    gap: 10px;
+}
+
+.workspace-leaf-content .wdwxedit-topbar {
+    padding: 5px 0 !important;
+}
+
+.workspace-leaf-content .wdwxedit-topbar .wdwxedit-toolbar {
+    justify-content: space-between !important;
+    flex-wrap: nowrap !important;
+    padding: 4px 20px 14px !important;
+}
+
+.wdwxedit-toolbar,
+.wdwxedit-toolbar * {
+    font-family: var(--font-interface);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.wdwxedit-cover-group {
+    margin-left: 10px !important;
 }
 
 .wdwxedit-toolbar-right {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .wdwxedit-toolbar-group {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .wdwxedit-toolbar-label {
-    font-weight: 500;
+    font-weight: 700;
     color: var(--text-normal);
     white-space: nowrap;
-    /* Alignment enforcement: Right */
     display: inline-block;
-    width: 60px;
-    text-align: right;
+    width: auto;
+    text-align: left;
 }
 
 .wdwxedit-account-select {
-    padding: 4px 8px;
-    border-radius: 4px;
+    padding: 4px 10px;
+    border-radius: 10px;
     border: 1px solid var(--background-modifier-border);
+    border-color: color-mix(in srgb, var(--background-modifier-border) 35%, transparent);
     background: var(--background-primary);
     min-width: 120px;
     height: 32px;
     /* Standard height */
+    box-shadow: none;
+    outline: none;
+    font-weight: 600;
+    color: var(--text-normal);
 }
 
 .wdwxedit-cover-options {
     display: flex;
-    gap: 12px;
+    gap: 8px;
     align-items: center;
     height: 32px;
     /* Standard height match */
@@ -68,7 +117,9 @@
     align-items: center;
     gap: 4px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-normal);
 }
 
 .wdwxedit-btn {
@@ -90,6 +141,85 @@
 
 .wdwxedit-btn:hover {
     background: var(--background-modifier-hover);
+}
+
+.wdwxedit-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    border: none !important;
+    background: transparent !important;
+    color: var(--text-normal) !important;
+    padding: 0 !important;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    box-shadow: none;
+    outline: none;
+    flex: 0 0 auto;
+}
+
+.wdwxedit-icon-btn:hover {
+    background: var(--background-modifier-hover) !important;
+}
+
+/* Force borderless icon buttons in toolbar (themes may restyle buttons) */
+.workspace-leaf-content .wdwxedit-topbar .wdwxedit-toolbar-right button.wdwxedit-icon-btn {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+.workspace-leaf-content .wdwxedit-topbar .wdwxedit-toolbar-right button.wdwxedit-icon-btn:hover {
+    background: var(--background-modifier-hover) !important;
+}
+
+/* Ensure toolbar icons always render (some themes/snippets hide button svgs) */
+.workspace-leaf-content .wdwxedit-topbar .wdwxedit-toolbar-right .wdwxedit-icon-btn > svg,
+.wdwxedit-topbar .wdwxedit-toolbar-right .wdwxedit-icon-btn > svg {
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    min-height: 18px !important;
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    color: var(--text-normal) !important;
+    stroke: var(--text-normal) !important;
+    fill: none !important;
+    pointer-events: none;
+}
+
+.workspace-leaf-content .wdwxedit-topbar .wdwxedit-toolbar-right .wdwxedit-icon-btn > svg *,
+.wdwxedit-topbar .wdwxedit-toolbar-right .wdwxedit-icon-btn > svg * {
+    stroke: var(--text-normal) !important;
+    fill: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.wdwxedit-icon-btn svg,
+.wdwxedit-icon-btn .svg-icon {
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px;
+    min-height: 18px;
+    display: block !important;
+    color: var(--text-normal) !important;
+    stroke: var(--text-normal) !important;
+    stroke-width: 2px !important;
+    fill: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    flex: 0 0 auto;
+}
+
+.wdwxedit-icon-btn svg * {
+    stroke: var(--text-normal) !important;
+    fill: none !important;
 }
 
 .wdwxedit-btn-primary {
@@ -179,11 +309,14 @@
 
 /* Increased specificity and forced padding */
 .wdwxedit-publish-view .wdwxedit-style-editor-container {
-    background: var(--background-primary);
-    border-bottom: 1px solid var(--background-modifier-border);
-    padding: 16px 10px !important;
-    /* Forces application of 10px padding */
+    background: transparent;
+    border-bottom: none;
+    padding: 14px 20px 12px !important;
     margin: 0;
+}
+
+.workspace-leaf-content .wdwxedit-topbar .wdwxedit-style-editor-container {
+    padding: 14px 20px 12px !important;
 }
 
 .style-editor-header,
@@ -199,8 +332,9 @@
 .style-editor-row {
     display: flex;
     align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
+    gap: 10px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
     margin-bottom: 0;
     width: 100%;
 }
@@ -221,7 +355,81 @@
 .style-dropdown-group {
     display: flex;
     align-items: center;
+    gap: 6px;
+    padding: 0;
+    border: none;
+    background: transparent;
+}
+
+.style-theme-trigger {
+    display: inline-flex;
+    align-items: center;
     gap: 8px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.style-theme-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    border: 1px solid var(--background-modifier-border);
+    flex: 0 0 auto;
+}
+
+.style-theme-chevron {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+}
+
+.style-theme-chevron svg {
+    width: 14px;
+    height: 14px;
+}
+
+.style-dropdown-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+}
+
+.style-dropdown-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.style-color-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    border: 1px solid var(--background-modifier-border);
+    background: var(--interactive-accent);
+    flex: 0 0 auto;
+}
+
+.style-color-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.style-color-chevron {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+}
+
+.style-color-chevron svg {
+    width: 14px;
+    height: 14px;
 }
 
 .style-dropdown-label {
@@ -231,20 +439,212 @@
     font-weight: 500;
     margin: 0;
     padding: 0;
-    /* Alignment enforcement: Right */
     display: inline-block;
-    width: 50px;
     text-align: left;
 }
 
 .style-dropdown {
-    padding: 4px 8px;
-    border-radius: 4px;
+    padding: 0 10px;
+    border-radius: 10px;
     border: 1px solid var(--background-modifier-border);
+    border-color: color-mix(in srgb, var(--background-modifier-border) 35%, transparent);
     background: var(--background-primary);
-    min-width: 80px;
+    min-width: 110px;
     height: 32px;
-    /* Standard height */
+    box-shadow: none;
+    outline: none;
+    color: var(--text-normal);
+    font-weight: 600;
+}
+
+/* Force dropdown backgrounds to white (per debug.png) */
+.workspace-leaf-content .wdwxedit-topbar .style-dropdown,
+.workspace-leaf-content .wdwxedit-topbar .wdwxedit-account-select {
+    background: #ffffff !important;
+}
+
+.workspace-leaf-content .wdwxedit-topbar .style-dropdown:focus,
+.workspace-leaf-content .wdwxedit-topbar .wdwxedit-account-select:focus {
+    background: #ffffff !important;
+}
+
+.style-highlight-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.style-font-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.style-fontsize-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.style-fontsize-aa {
+    color: var(--text-muted);
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.style-fontsize-aa svg {
+    width: 16px;
+    height: 16px;
+    color: var(--text-muted);
+}
+
+.style-highlight-chevron {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+}
+
+.style-font-chevron {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+}
+
+.style-fontsize-chevron {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+}
+
+.style-highlight-chevron svg {
+    width: 14px;
+    height: 14px;
+}
+
+.style-font-chevron svg {
+    width: 14px;
+    height: 14px;
+}
+
+.style-fontsize-chevron svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Theme dropdown menu items (menus are appended to body, not inside the view) */
+.menu:has(.wdwxedit-theme-menu-item),
+.menu:has(.wdwxedit-highlight-menu-item),
+.menu:has(.wdwxedit-font-menu-item),
+.menu:has(.wdwxedit-fontsize-menu-item),
+.menu:has(.wdwxedit-color-menu-item) {
+    background: #ffffff !important;
+}
+
+.menu:has(.wdwxedit-theme-menu-item) .menu-item,
+.menu:has(.wdwxedit-highlight-menu-item) .menu-item,
+.menu:has(.wdwxedit-font-menu-item) .menu-item,
+.menu:has(.wdwxedit-fontsize-menu-item) .menu-item,
+.menu:has(.wdwxedit-color-menu-item) .menu-item {
+    background: transparent !important;
+}
+
+.menu .wdwxedit-color-menu-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    border: 1px solid var(--background-modifier-border);
+    flex: 0 0 auto;
+}
+
+.menu .wdwxedit-theme-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.menu .wdwxedit-theme-menu-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    border: 1px solid var(--background-modifier-border);
+    flex: 0 0 auto;
+}
+
+.menu .wdwxedit-theme-menu-text {
+    flex: 1 1 auto;
+}
+
+.menu .wdwxedit-theme-menu-check {
+    display: none;
+    width: 16px;
+    height: 16px;
+    color: var(--text-muted);
+    flex: 0 0 auto;
+}
+
+.menu .wdwxedit-theme-menu-item.is-selected .wdwxedit-theme-menu-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.menu .wdwxedit-theme-menu-check svg {
+    width: 16px;
+    height: 16px;
+}
+
+.menu .wdwxedit-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.menu .wdwxedit-menu-text {
+    flex: 1 1 auto;
+}
+
+.menu .wdwxedit-menu-check {
+    display: none;
+    width: 16px;
+    height: 16px;
+    color: var(--text-muted);
+    flex: 0 0 auto;
+}
+
+.menu .wdwxedit-menu-item.is-selected .wdwxedit-menu-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.menu .wdwxedit-menu-check svg {
+    width: 16px;
+    height: 16px;
+}
+
+.color-input {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    background: transparent;
 }
 
 .style-custom-css-input {
@@ -264,6 +664,62 @@
 
 .wdwxedit-modal h2 {
     margin-top: 0;
+}
+
+/* Make Obsidian Setting rows more compact and consistent inside plugin modals */
+.wdwxedit-modal .setting-item {
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.wdwxedit-modal .setting-item-info {
+    flex: 0 1 auto;
+    min-width: 180px;
+}
+
+.wdwxedit-modal .setting-item-control {
+    margin-left: 14px;
+}
+
+.wdwxedit-modal .wdwxedit-cover-media-row .setting-item-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.wdwxedit-modal .wdwxedit-cover-media-row .setting-item-control input[type="text"] {
+    flex: 1 1 auto;
+    width: 0;
+    min-width: 180px;
+    max-width: 100%;
+}
+
+.wdwxedit-modal .wdwxedit-cover-media-row .setting-item-control button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+.wdwxedit-modal .setting-item-control input[type="text"],
+.wdwxedit-modal .setting-item-control input[type="password"],
+.wdwxedit-modal .setting-item-control select {
+    height: 32px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-primary);
+    color: var(--text-normal);
+    width: 260px;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.wdwxedit-modal .setting-item-control textarea {
+    border-radius: 6px;
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-primary);
+    color: var(--text-normal);
+    box-sizing: border-box;
 }
 
 .wdwxedit-modal-footer {

@@ -163,6 +163,7 @@ export class PublishModal extends Modal {
                     }
                 })
             );
+        coverMediaSetting.settingEl.addClass('wdwxedit-cover-media-row');
 
         const coverMediaInput = coverMediaSetting.controlEl.querySelector('input') as HTMLInputElement | null;
 

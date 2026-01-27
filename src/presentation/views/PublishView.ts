@@ -98,12 +98,15 @@ export class PublishView extends ItemView {
         this.dynamicStyleEl = this.contentEl.createEl('style', { cls: 'wdwxedit-dynamic-styles' });
         this.updateDynamicStyles();
 
+        // Top bar (toolbar + style row)
+        const topBar = this.contentEl.createDiv({ cls: 'wdwxedit-topbar' });
+
         // Toolbar buttons
-        this.toolbarEl = this.contentEl.createDiv({ cls: 'wdwxedit-toolbar' });
+        this.toolbarEl = topBar.createDiv({ cls: 'wdwxedit-toolbar' });
         this.buildToolbar(this.toolbarEl);
 
         // Style editor
-        this.styleEditorContainer = this.contentEl.createDiv({ cls: 'wdwxedit-style-editor-container' });
+        this.styleEditorContainer = topBar.createDiv({ cls: 'wdwxedit-style-editor-container' });
         this.buildStyleEditor(this.styleEditorContainer);
 
         // Preview container
@@ -176,7 +179,7 @@ export class PublishView extends ItemView {
         coverInput.style.display = 'none';
 
         // Cover options container
-        const coverGroup = leftSection.createDiv({ cls: 'wdwxedit-toolbar-group' });
+        const coverGroup = leftSection.createDiv({ cls: 'wdwxedit-toolbar-group wdwxedit-cover-group' });
         coverGroup.createEl('span', { text: '封面:', cls: 'wdwxedit-toolbar-label' });
 
         // Radio group
@@ -237,28 +240,30 @@ export class PublishView extends ItemView {
         // Right Section: Buttons
         const rightSection = container.createDiv({ cls: 'wdwxedit-toolbar-right' });
 
-        // Refresh button
-        const refreshBtn = rightSection.createEl('button', {
-            cls: 'wdwxedit-btn',
-            attr: { 'aria-label': '刷新预览' }
-        });
-        refreshBtn.innerHTML = '🔄'; // Using emoji as icon
-        refreshBtn.addEventListener('click', () => this.refresh());
-
         // Copy button
         const copyBtn = rightSection.createEl('button', {
-            cls: 'wdwxedit-btn',
+            cls: 'wdwxedit-icon-btn',
             attr: { 'aria-label': '复制到剪贴板' }
         });
-        copyBtn.innerHTML = '📋';
+        copyBtn.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="8" y="8" width="14" height="14" rx="2" ry="2"></rect>
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+            </svg>
+        `;
         copyBtn.addEventListener('click', () => this.copyToClipboard());
 
         // Publish button (Send)
         const sendBtn = rightSection.createEl('button', {
-            cls: 'wdwxedit-btn',
+            cls: 'wdwxedit-icon-btn',
             attr: { 'aria-label': '发布到公众号' }
         });
-        sendBtn.innerHTML = '📤';
+        sendBtn.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 2 11 13"></path>
+                <path d="M22 2 15 22 11 13 2 9 22 2z"></path>
+            </svg>
+        `;
         sendBtn.addEventListener('click', () => this.publish());
     }
 
