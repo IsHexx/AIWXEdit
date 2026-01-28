@@ -1,7 +1,7 @@
 {
     "id": "aiwxedit",
     "name": "AIWXEdit",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "minAppVersion": "1.4.5",
     "description": "Publish notes to WeChat Official Account with perfect formatting, code highlighting, math formulas, and local image upload support.",
     "author": "IsHexx",

@@ -1,6 +1,6 @@
 {
     "name": "wdwxedit-v5",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "Obsidian plugin for publishing notes to WeChat Official Account",
     "main": "main.js",
     "scripts": {

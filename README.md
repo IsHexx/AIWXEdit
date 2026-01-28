@@ -53,3 +53,9 @@ npm run dev
 ## License
 
 MIT
+
+## Attribution
+
+This project includes code derived from the Obsidian plugin "note-to-mp" by sunbooshi:
+- https://github.com/sunbooshi/note-to-mp (MIT License)
+- See `THIRD_PARTY_NOTICES.md` and `LICENSES/note-to-mp-MIT.txt`
