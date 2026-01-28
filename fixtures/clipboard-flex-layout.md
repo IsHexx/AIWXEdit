@@ -3,7 +3,7 @@
 This fixture is for manually verifying WeChat paste behavior for flex-based layouts.
 
 1. Open this file in Obsidian.
-2. Use wdwxedit-v5 to preview and “Copy to clipboard”.
+2. Use AIWXEdit to preview and “Copy to clipboard”.
 3. Paste into WeChat Official Account editor.
 
 Expected: the two cards stay side-by-side (flex layout preserved).

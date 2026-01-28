@@ -17,3 +17,6 @@ Thumbs.db
 # Internal tools/debug
 debug.png
 deploy.py
+
+# Local helper outputs (do not commit)
+reviewbot-*.txt

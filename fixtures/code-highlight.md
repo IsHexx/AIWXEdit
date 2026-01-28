@@ -3,7 +3,7 @@
 Use this fixture to manually verify that code blocks have rich token coloring (keywords/strings/numbers/comments/types, etc.).
 
 1. Open this file in Obsidian.
-2. Use wdwxedit-v5 to preview.
+2. Use AIWXEdit to preview.
 3. Switch “代码高亮” between themes (GitHub / Atom One Dark / Dracula).
 4. Confirm that background + more token types change (not only a few colors).
 

@@ -87,7 +87,7 @@ export const BASE_WECHAT_CSS = `
   border-radius: 3px;
 }
 
-/* Code block (note-to-mp compatible structure) */
+/* Code block layout */
 .wx-article .code-section {
   display: flex;
   border: 1px solid #e6e6e6;

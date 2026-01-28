@@ -1,6 +1,6 @@
 {
-    "name": "wdwxedit-v5",
-    "version": "1.0.3",
+    "name": "aiwxedit",
+    "version": "1.0.4",
     "description": "Obsidian plugin for publishing notes to WeChat Official Account",
     "main": "main.js",
     "scripts": {
@@ -14,6 +14,14 @@
         "publishing"
     ],
     "author": "IsHexx",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/IsHexx/AIWXEdit.git"
+    },
+    "bugs": {
+        "url": "https://github.com/IsHexx/AIWXEdit/issues"
+    },
+    "homepage": "https://github.com/IsHexx/AIWXEdit",
     "license": "MIT",
     "devDependencies": {
         "@types/node": "^20.0.0",

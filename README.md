@@ -21,7 +21,7 @@
 4. Click **Install** and then **Enable**.
 
 ### Manual Installation
-1. Download the `main.js`, `manifest.json`, and `styles.css` from the [Latest Release](https://github.com/IsHexx/AIWXEdit/releases).
+1. Download the `main.js`, `manifest.json`, and `styles.css` from the [Latest Release](https://github.com/IsHexx/AIWXEdit/releases/latest).
 2. Create a folder named `aiwxedit` in your vault's `.obsidian/plugins/` directory.
 3. Put the downloaded files into that folder.
 4. Reload Obsidian and enable the plugin.
@@ -54,8 +54,6 @@ npm run dev
 
 MIT
 
-## Attribution
+## Third-party notices
 
-This project includes code derived from the Obsidian plugin "note-to-mp" by sunbooshi:
-- https://github.com/sunbooshi/note-to-mp (MIT License)
-- See `THIRD_PARTY_NOTICES.md` and `LICENSES/note-to-mp-MIT.txt`
+See `THIRD_PARTY_NOTICES.md` and `LICENSES/` for third-party attributions and license texts.
