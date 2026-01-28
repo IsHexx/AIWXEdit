@@ -227,7 +227,8 @@ export default class AIWXEditPlugin extends Plugin {
      */
     private refreshViews(): void {
         const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_PUBLISH);
-        for (const leaf of leaves) {
+        for (const viewLeaf of leaves) {
+            void viewLeaf;
             // TODO: Call refresh on view
         }
     }
