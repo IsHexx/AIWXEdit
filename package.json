@@ -1,6 +1,6 @@
 {
     "name": "aiwxedit",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "description": "Obsidian plugin for publishing notes to WeChat Official Account",
     "main": "main.js",
     "scripts": {
