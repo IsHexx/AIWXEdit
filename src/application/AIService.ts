@@ -59,7 +59,7 @@ export class AIService {
         });
 
         this.coverGenerator = settings.enableCover ? new CoverGenerator(this.client, {
-            mode: settings.coverMethod as CoverMode || 'image',
+            mode: settings.coverMethod || 'image',
             imageModel: settings.coverModel,
             style: 'minimal' as CoverStyle,
         }) : null;

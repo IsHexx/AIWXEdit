@@ -14,6 +14,7 @@ import { PublishView, VIEW_TYPE_PUBLISH, SettingsTab, PublishModal } from './pre
 import type { ParsedArticle } from './types/article.types';
 import { getPublishService, getPreviewService, getAIService } from './application';
 import { getArticleTransformer } from './domain/article';
+import { clearAllTokens, clearWechatClientCache } from './infrastructure/wechat';
 
 /**
  * AIWXEdit Plugin
@@ -34,6 +35,7 @@ export default class AIWXEditPlugin extends Plugin {
 
     /** Flag indicating if plugin is fully initialized */
     private isInitialized = false;
+    private disposed = false;
 
     constructor(app: App, manifest: PluginManifest) {
         super(app, manifest);
@@ -51,11 +53,13 @@ export default class AIWXEditPlugin extends Plugin {
      * Called when the plugin is enabled
      */
     async onload(): Promise<void> {
-        console.debug('AIWXEdit V5: Loading plugin...');
+        this.disposed = false;
+        this.registerView(VIEW_TYPE_PUBLISH, (leaf) => new PublishView(leaf, this));
 
         // Load settings and assets
         await this.settingsStore.load();
         await this.assetStore.load();
+        if (this.disposed) return;
 
         // Wait for workspace to be ready before registering views
         this.app.workspace.onLayoutReady(() => {
@@ -67,18 +71,18 @@ export default class AIWXEditPlugin extends Plugin {
      * Initialize plugin after workspace is ready
      */
     private async initializePlugin(): Promise<void> {
+        if (this.disposed) return;
         try {
             // Initialize application services
             const articleTransformer = getArticleTransformer();
             articleTransformer.initialize(this.app);
             await articleTransformer.setup();
+            if (this.disposed) return;
 
             getPublishService().initialize(this.app);
             await getPreviewService().initialize(this.app);
+            if (this.disposed) return;
             getAIService().initialize();
-
-            // Register the publish view
-            this.registerView(VIEW_TYPE_PUBLISH, (leaf) => new PublishView(leaf, this));
 
             // Add ribbon icon
             const ribbonIconEl = this.addRibbonIcon(
@@ -118,7 +122,6 @@ export default class AIWXEditPlugin extends Plugin {
             );
 
             this.isInitialized = true;
-            console.debug('AIWXEdit V5: Plugin initialized successfully');
         } catch (error) {
             console.error('AIWXEdit V5: Failed to initialize plugin:', error);
             new Notice('插件初始化失败');
@@ -130,7 +133,11 @@ export default class AIWXEditPlugin extends Plugin {
      * Called when the plugin is disabled
      */
     onunload(): void {
-        console.debug('AIWXEdit V5: Unloading plugin...');
+        this.disposed = true;
+        this.isInitialized = false;
+        getPreviewService().dispose();
+        clearAllTokens();
+        clearWechatClientCache();
     }
 
     /**
@@ -162,7 +169,7 @@ export default class AIWXEditPlugin extends Plugin {
         // Ensure workspace is ready
         if (!this.app.workspace.layoutReady) {
             this.app.workspace.onLayoutReady(() => {
-                setTimeout(() => void this.activateView(), 100);
+                window.setTimeout(() => void this.activateView(), 100);
             });
             return;
         }

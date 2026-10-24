@@ -11,7 +11,7 @@ import type { ParsedArticle } from '../types/article.types';
 import { getArticleTransformer } from '../domain/article';
 import { getWechatClient, WechatClient } from '../infrastructure/wechat';
 import { getSettingsStore } from '../infrastructure/storage';
-import { clearChildren, replaceChildrenWithHtml } from '../utils/dom';
+import { clearChildren, replaceChildrenWithHtml, setExportStyles } from '../utils/dom';
 
 /**
  * Publish options
@@ -272,7 +272,7 @@ export class PublishService {
         table.setAttribute('cellpadding', '0');
         table.setAttribute('cellspacing', '0');
         table.setAttribute('border', '0');
-        table.setCssProps({
+        setExportStyles(table, {
             'border-collapse': 'collapse',
             width: '100%',
         });
@@ -282,7 +282,7 @@ export class PublishService {
         const td = doc.createElement('td');
 
         if (bgHex) td.setAttribute('bgcolor', bgHex);
-        td.setCssProps({ 'background-color': bg });
+        setExportStyles(td, { 'background-color': bg });
 
         // Keep the original root (with all inlined typography/layout), but add a robust background behind it.
         td.appendChild(root);

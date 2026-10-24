@@ -11,16 +11,13 @@ This project includes code derived from the following third-party project(s).
    - Scope of derivation (high-level):
      - Code block rendering structure (line numbers + per-line code layout) and WeChat editor compatibility handling.
      - Current implementation lives in `src/infrastructure/markdown/plugins/CodeBlockPlugin.ts` and related HTML post-processing in `src/infrastructure/html/normalizeWechatHtml.ts`.
+     - The separate Maple stylesheet in `assets/themes/maple.css` and its historical copy.
 
-2) MWeb themes (reference / external styles)
+2) MWeb themes (historical, excluded from the release candidate)
    - Repository: https://github.com/imageslr/mweb-themes
    - License: No license file found in the upstream repository at the time of writing.
-   - How it is used here:
-     - Theme metadata and compatibility handling for theme CSS (including legacy `.wdwxedit` selector rewriting).
-     - This repository includes the installed Obsidian baseline CSS under `assets/themes/`, with metadata in `assets/themes.json`; historical copies remain under `assets_backup/`.
-     - Obsidian release artifacts for this plugin only ship `main.js`, `manifest.json`, and `styles.css` (no theme packs).
-   - Note:
-     - If you plan to redistribute any CSS originating from that repository (directly or via a CDN), you should obtain an explicit license/permission from the upstream author first.
+   - The 1.0.6 release candidate removes MWeb CSS from both `assets/themes/` and `assets_backup/themes/`, the bundled asset index, and the built-in download catalog. No redistribution permission was available.
+   - Older Git history and existing user installations may still contain these files; this change does not remove users' installed styles. Historical source snapshots should not be treated as cleared for redistribution.
 
 3) doocs/md
    - Repository: https://github.com/doocs/md
@@ -33,3 +30,9 @@ This project includes code derived from the following third-party project(s).
    - Copyright: (c) 2006 Ivan Sagalaev
    - License text: LICENSES/highlight.js-BSD-3-Clause.txt
    - Scope: Syntax highlighting dependency and installed highlight styles under `assets/highlights/`.
+
+5) Markdown Nice
+   - Repository: https://github.com/mdnice/markdown-nice
+   - License: GPL-3.0 (upstream LICENSE)
+   - License text: LICENSES/markdown-nice-GPL-3.0.txt
+   - Scope: Separate `mdnice-*.css` article styles in `assets/themes/` and their historical copies in `assets_backup/themes/`. These styles retain their upstream license; the plugin's MIT license does not relicense them. They are not bundled into `main.js` or the three plugin installation assets.

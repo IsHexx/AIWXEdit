@@ -146,7 +146,7 @@ export class MarkdownEngine {
      * Render tokens to HTML
      */
     render(tokens: Token[]): string {
-        return this.marked.parser(tokens as TokensList);
+        return this.marked.parser(tokens);
     }
 
     /**

@@ -186,9 +186,9 @@ export class ThemeMarketModal extends Modal {
                     button.setButtonText('...').setDisabled(true);
                     try {
                         if (this.activeTab === 'themes') {
-                            await this.assetStore.installTheme(item as ThemeCatalogItem);
+                            await this.assetStore.installTheme(item);
                         } else {
-                            await this.assetStore.installHighlight(item as HighlightCatalogItem);
+                            await this.assetStore.installHighlight(item);
                         }
                         new Notice(`下载成功: ${item.name}`);
                     } catch (error) {

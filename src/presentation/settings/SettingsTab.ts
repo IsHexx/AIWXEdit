@@ -53,8 +53,6 @@ export class SettingsTab extends PluginSettingTab {
         const { containerEl } = this;
         containerEl.empty();
 
-        new Setting(containerEl).setName('发布助手设置').setHeading();
-
         // WeChat Account Section
         this.createAccountSection(containerEl);
 

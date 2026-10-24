@@ -2,7 +2,7 @@
  * Normalize HTML for more consistent WeChat editor rendering.
  * Keep this minimal: remove empty list items and invisible characters.
  */
-import { replaceChildrenWithHtml } from '../../utils/dom';
+import { replaceChildrenWithHtml, setExportStyles } from '../../utils/dom';
 
 export function normalizeWechatHtml(html: string): string {
     if (typeof document === 'undefined') return html;
@@ -100,7 +100,7 @@ export function postProcessInlinedWechatHtml(html: string): string {
         // Use computed styles to avoid reading `element.style.*` directly.
         const bgColor = getComputedStyle(el).backgroundColor || '';
         if (!isTransparent(bgColor)) {
-            el.setCssProps({ 'background-color': bgColor });
+            setExportStyles(el, { 'background-color': bgColor });
         }
     };
 
@@ -129,8 +129,8 @@ export function postProcessInlinedWechatHtml(html: string): string {
             // Avoid deprecated <font>; keep color as inline CSS.
             const parentEl = el.parentElement;
             if (!parentEl) return;
-            const span = parentEl.createEl('span');
-            span.setCssProps({ color });
+            const span = parentEl.createSpan();
+            setExportStyles(span, { color });
             parentEl.insertBefore(span, el);
             span.appendChild(el);
         });

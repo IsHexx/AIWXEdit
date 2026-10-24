@@ -54,7 +54,7 @@ export class ImageUploader {
                 },
             });
 
-            const result = response.json;
+            const result = response.json as Partial<WechatAPIError> & { media_id?: string; url?: string };
 
             // Check for error
             if (result.errcode) {

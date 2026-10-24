@@ -61,9 +61,10 @@ export class PublishView extends ItemView {
         this.register(() => offSettings());
 
         // Subscribe to preview changes
-        this.previewService.addListener((state) => {
+        const offPreview = this.previewService.addListener((state) => {
             this.updatePreview(state.article?.styledHtmlContent || '');
         });
+        this.register(offPreview);
 
         // Watch for active file changes
         this.registerEvent(
@@ -143,7 +144,7 @@ export class PublishView extends ItemView {
 
         // Account Selector
         const accountGroup = leftSection.createDiv({ cls: 'wdwxedit-toolbar-group' });
-        accountGroup.createEl('span', { text: '公众号:', cls: 'wdwxedit-toolbar-label' });
+        accountGroup.createSpan({ text: '公众号:', cls: 'wdwxedit-toolbar-label' });
 
         const accounts = this.getAccounts();
         const accountSelect = accountGroup.createEl('select', { cls: 'wdwxedit-account-select' });
@@ -176,7 +177,7 @@ export class PublishView extends ItemView {
 
         // Cover options container
         const coverGroup = leftSection.createDiv({ cls: 'wdwxedit-toolbar-group wdwxedit-cover-group' });
-        coverGroup.createEl('span', { text: '封面:', cls: 'wdwxedit-toolbar-label' });
+        coverGroup.createSpan({ text: '封面:', cls: 'wdwxedit-toolbar-label' });
 
         // Radio group
         const coverOptions = coverGroup.createDiv({ cls: 'wdwxedit-cover-options' });

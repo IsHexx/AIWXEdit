@@ -5,6 +5,8 @@ npm-debug.log*
 # Build outputs
 main.js
 *.tsbuildinfo
+data.json
+dist/
 
 # IDE
 .vscode/

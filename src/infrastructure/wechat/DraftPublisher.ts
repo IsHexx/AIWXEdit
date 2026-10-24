@@ -63,7 +63,7 @@ export class DraftPublisher {
                 },
             });
 
-            const result = response.json;
+            const result = response.json as Partial<WechatAPIError> & { media_id?: string; total_count?: number };
 
             // Check for error
             if (result.errcode) {
@@ -117,7 +117,7 @@ export class DraftPublisher {
                 },
             });
 
-            const result = response.json;
+            const result = response.json as Partial<WechatAPIError> & { media_id?: string; total_count?: number };
 
             if (result.errcode && result.errcode !== 0) {
                 const error = result as WechatAPIError;
@@ -155,7 +155,7 @@ export class DraftPublisher {
                 },
             });
 
-            const result = response.json;
+            const result = response.json as Partial<WechatAPIError> & { media_id?: string; total_count?: number };
 
             if (result.errcode && result.errcode !== 0) {
                 const error = result as WechatAPIError;
@@ -186,7 +186,7 @@ export class DraftPublisher {
                 method: 'GET',
             });
 
-            const result = response.json;
+            const result = response.json as Partial<WechatAPIError> & { media_id?: string; total_count?: number };
 
             if (result.errcode) {
                 const error = result as WechatAPIError;

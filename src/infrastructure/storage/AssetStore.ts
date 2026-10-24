@@ -616,8 +616,10 @@ export class AssetStore {
         }
         try {
             const raw = await adapter.read(this.highlightsConfigPath);
-            const items = JSON.parse(raw);
-            return Array.isArray(items) ? items : [];
+            const items: unknown = JSON.parse(raw);
+            return Array.isArray(items) ? items.filter((item: unknown): item is { name: string } =>
+                typeof item === 'object' && item !== null && 'name' in item && typeof item.name === 'string'
+            ) : [];
         } catch {
             return [];
         }

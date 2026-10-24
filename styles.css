@@ -847,3 +847,13 @@
 .wdwxedit-mini-btn:hover {
     background: var(--background-modifier-hover);
 }
+
+/* Temporary measurement surface used to prepare WeChat clipboard HTML. */
+.aiwxedit-export-measure {
+    position: fixed;
+    left: -9999px;
+    top: 0;
+    opacity: 0;
+    pointer-events: none;
+    user-select: none;
+}

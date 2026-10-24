@@ -1,59 +1,72 @@
-# AIWXEdit (WeChat Article Editor)
+# AIWXEdit
 
-**AIWXEdit** is an Obsidian plugin that allows you to publish your notes directly to WeChat Official Accounts (微信公众号) with perfect formatting.
+Format Markdown notes for WeChat Official Accounts (微信公众号), preview the result in a sidebar, and send articles to the account's **draft box**. Publishing a draft does not send an article to subscribers; review and publish it from WeChat yourself.
 
 ## Features
 
-- **Perfect Formatting**: Preserves your Markdown styling, including headers, list, bold, italic, and more.
-- **Code Highlighting**: Supports syntax highlighting for code blocks.
-- **Local Image Upload**: Automatically uploads local images from your vault to WeChat servers.
-- **Math Formula Support**: Renders LaTeX math formulas correctly.
-- **Theme Support**: Choose from built-in themes or customize your own CSS.
-- **Multi-Account Support**: Manage multiple WeChat Official Accounts.
-- **AI Integration**: Auto-generate titles and covers using AI.
+- Markdown headings, lists, tables, blockquotes, callouts, and code highlighting.
+- Built-in article themes, font and color controls, custom CSS, and optional theme downloads.
+- Local image uploads and rich-text copying for the WeChat editor.
+- Multiple WeChat accounts, cover selection, and draft creation or updates.
+- Optional AI title suggestions and cover generation through your own API provider.
+
+The interface is primarily in Chinese. LaTeX formula rendering is not currently implemented.
+
+Requires Obsidian 1.7.2 or later. Desktop clipboard copying uses Electron when available; mobile uses browser clipboard APIs. Mobile devices have not yet been verified in this release candidate.
+
+![AIWXEdit running in an isolated Obsidian test vault](docs/screenshots/desktop-preview.png)
 
 ## Installation
 
-### From Community Plugins
-1. Open Obsidian settings.
-2. Go to **Community Plugins** and turn off **Safe Mode**.
-3. Click **Browse** and search for "AIWXEdit".
-4. Click **Install** and then **Enable**.
+Community directory submission is in preparation. Until it is accepted, use manual installation. A GitHub release alone does not mean the plugin is listed in Obsidian.
 
-### Manual Installation
-1. Download the `main.js`, `manifest.json`, and `styles.css` from the [Latest Release](https://github.com/IsHexx/AIWXEdit/releases/latest).
-2. Create a folder named `aiwxedit` in your vault's `.obsidian/plugins/` directory.
-3. Put the downloaded files into that folder.
-4. Reload Obsidian and enable the plugin.
+1. Download `main.js`, `manifest.json`, and `styles.css` from a [public release](https://github.com/IsHexx/AIWXEdit/releases).
+2. Create `<vault>/<config-folder>/plugins/aiwxedit/` (the default config folder is `.obsidian`).
+3. Put the three files in that directory, restart Obsidian, and enable **AIWXEdit** under **Settings → Community plugins**.
 
-## Setup
+Only these three files are required. Default article styling and code highlighting work without a separate `assets` folder. Downloaded styles and custom CSS are stored under the plugin's `assets` folder.
 
-1. Go to **Settings** > **AIWXEdit**.
-2. Add your WeChat Official Account credentials (`AppID` and `AppSecret`).
-   - You can get these from the [WeChat Official Accounts Platform](https://mp.weixin.qq.com/) under **Development** > **Basic Settings**.
-3. (Optional) Configure AI features if you want auto-generated content.
+Once accepted into the community directory, install it through **Settings → Community plugins → Browse** by searching for **AIWXEdit**.
 
-## Usage
+## Setup and use
 
-1. Open a Markdown note.
-2. Click the ribbon icon or use the command palette (`Ctrl/Cmd + P`) and search for "AIWXEdit: Open Publish View".
-3. In the right sidebar view:
-   - Preview your article.
-   - Select the target account.
-   - Choose a cover image (Default, Upload, or AI generated).
-4. Click **Publish** to send it as a draft to your WeChat Official Account.
+1. Open **Settings → AIWXEdit** and add a WeChat Official Account's `AppID` and `AppSecret`. Your account needs access to the relevant WeChat draft and material APIs. Obtain credentials and configure any required IP allowlist in the [WeChat Official Accounts Platform](https://mp.weixin.qq.com/).
+2. Open a Markdown note. Use the ribbon button or the command **AIWXEdit: 打开发布视图** to open the preview.
+3. Choose the account and article style. Select a cover, or choose one in the publishing dialog.
+4. Click the send button, review the title, cover, author, and summary, and confirm to create or update a WeChat draft.
+5. Review the draft in WeChat before publishing it to subscribers.
+
+The copy button writes formatted HTML and plain text to your clipboard. **When an account is configured, copying also attempts to upload local article images to WeChat**, so pasted images can be displayed there. Without an account, local images are embedded where supported. Clipboard capabilities vary between desktop and mobile; plain-text copying is the final fallback.
+
+Optional AI tools require enabling AI in settings and providing your own API key. Provider/model support and image generation availability depend on your selected service. Previewing and styling notes do not require AI or an API key.
+
+## Network, accounts, and privacy
+
+The plugin has no client-side analytics or telemetry. Network requests are made for the following features:
+
+| Feature | Remote service and data |
+| --- | --- |
+| Account connection test and draft operations | `api.weixin.qq.com`: account credentials to obtain an access token; tokens, article HTML, metadata, covers, and images for the requested operation. |
+| Image previews | Images referenced by the note, selected WeChat materials, or generated covers can load from their original hosts, including WeChat image hosts such as `mmbiz.qpic.cn` and `mmbiz.qlogo.cn`. |
+| Optional AI | Your configured OpenAI-compatible endpoint. Presets include OpenAI, OpenRouter, DeepSeek, Kimi/Moonshot, and Zhipu. Title generation sends article text and prompts; cover generation sends the title, summary, and prompt. Connection testing also contacts the selected provider. |
+| Optional theme/highlight downloads | `cdn.jsdelivr.net` and `raw.githubusercontent.com`, or a CSS URL you add yourself. Requests fetch CSS when you choose to download a style; CSS can reference remote images or fonts. |
+
+WeChat publishing requires a WeChat Official Account with the necessary API permissions. AI services may charge usage fees independently of this free, MIT-licensed plugin; you supply and manage those accounts. Data sent to an external service is subject to that service's policies.
+
+Settings, WeChat `AppSecret` values, and AI API keys are saved **unencrypted** in the plugin's `data.json` inside your vault's configuration folder. Protect that folder and consider whether your vault sync, backups, or Git repository include it. Access tokens are cached in memory. The plugin does not read files outside your vault or automatically publish to subscribers.
 
 ## Development
 
+Use Node.js 22 and npm:
+
 ```bash
-npm install
+npm ci
+npm run check
 npm run dev
 ```
 
-## License
+`npm run build` produces the root `main.js`. Release validation and submission instructions are in [docs/RELEASING.md](docs/RELEASING.md).
 
-MIT
+## License and attribution
 
-## Third-party notices
-
-See `THIRD_PARTY_NOTICES.md` and `LICENSES/` for third-party attributions and license texts.
+MIT; see [LICENSE](LICENSE). Code block rendering and WeChat HTML compatibility include code derived from [sunbooshi/note-to-mp](https://github.com/sunbooshi/note-to-mp), copyright 2024 sunbooshi, under MIT. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [LICENSES](LICENSES/) for all notices and license texts.

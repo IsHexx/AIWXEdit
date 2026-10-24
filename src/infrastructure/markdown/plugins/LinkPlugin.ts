@@ -83,7 +83,7 @@ export class LinkPlugin extends BaseMarkdownPlugin {
             },
         };
 
-        return { renderer } as MarkedExtension;
+        return { renderer };
     }
 
     /**

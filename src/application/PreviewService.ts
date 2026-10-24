@@ -5,13 +5,13 @@
  * Handles article rendering and real-time updates.
  */
 
-import { App, TFile } from 'obsidian';
+import { App, Platform, TFile } from 'obsidian';
 import type { ParsedArticle } from '../types/article.types';
 import type { StyleConfig } from '../types/settings.types';
 import { getArticleTransformer, ArticleTransformer } from '../domain/article';
 import { getSettingsStore } from '../infrastructure/storage';
 import { getWechatClient } from '../infrastructure/wechat';
-import { replaceChildrenWithHtml } from '../utils/dom';
+import { replaceChildrenWithHtml, setExportStyles } from '../utils/dom';
 
 /**
  * Preview state
@@ -49,6 +49,7 @@ export class PreviewService {
         isLoading: false,
     };
     private listeners: Set<PreviewChangeListener> = new Set();
+    private renderGeneration = 0;
 
     private constructor() { }
 
@@ -83,20 +84,31 @@ export class PreviewService {
      * Set file to preview
      */
     async setFile(file: TFile | null): Promise<void> {
+        const generation = ++this.renderGeneration;
         if (!file) {
-            this.updateState({ file: null, article: null });
+            this.updateState({ file: null, article: null, isLoading: false });
             return;
         }
 
-        this.updateState({ file, isLoading: true });
+        this.updateState({ file, article: null, isLoading: true });
 
         try {
             const article = await this.transformer?.transformFile(file);
+            if (generation !== this.renderGeneration) return;
             this.updateState({ article: article || null, isLoading: false });
         } catch (error) {
+            if (generation !== this.renderGeneration) return;
             console.error('Preview render error:', error);
             this.updateState({ article: null, isLoading: false });
         }
+    }
+
+    dispose(): void {
+        ++this.renderGeneration;
+        this.listeners.clear();
+        this.state = { file: null, article: null, themeId: 'default', isLoading: false };
+        this.app = null;
+        this.transformer = null;
     }
 
     /**
@@ -195,21 +207,14 @@ export class PreviewService {
             return html;
         }
 
-        const container = document.createElement('div');
-        container.setCssProps({
-            position: 'fixed',
-            left: '-9999px',
-            top: '0',
-            opacity: '0',
-            'pointer-events': 'none',
-            'user-select': 'none',
-        });
+        const container = createDiv();
+        container.addClass('aiwxedit-export-measure');
         replaceChildrenWithHtml(container, html);
 
         document.body.appendChild(container);
 
         try {
-            await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+            await new Promise<void>(resolve => window.requestAnimationFrame(() => resolve()));
 
             const root = container.firstElementChild as HTMLElement | null;
             if (!root) return html;
@@ -250,7 +255,7 @@ export class PreviewService {
             const rootPadBottom = parseFloat(articleStyle.paddingBottom) || 0;
 
             // Wrap everything into a clean <section> root (WeChat paste tends to keep it more consistently than div wrappers).
-            const wrapper = document.createElement('section');
+            const wrapper = createEl('section');
             // Keep the original class so copy/selection fallbacks treat it as the article root.
             wrapper.classList.add('wx-article');
             const wrapperStyle: string[] = [];
@@ -355,7 +360,7 @@ export class PreviewService {
                     // Only fill transparent block backgrounds when they're not inside a colored block.
                     // Otherwise, paragraphs inside callouts/quotes become white boxes.
                     if (isTransparent(bgColor) && !hasNonPageBackgroundAncestor(element)) {
-                        element.setCssProps({ 'background-color': fallbackBg });
+                        setExportStyles(element, { 'background-color': fallbackBg });
                     }
 
                     // Copy-time margin normalization converts margin to padding to avoid WeChat "double margins".
@@ -367,9 +372,9 @@ export class PreviewService {
                         && canSplitBox
                         && (isColoredBlock || ((mt > 0 || (mb > 0 && isLast)) && (hasBoxPadding || hasBoxBorder)));
                     if (needsSplitBox) {
-                        const inner = document.createElement('div');
+                        const inner = createDiv();
                         // Preserve the original box styling on the inner wrapper.
-                        inner.setCssProps({
+                        setExportStyles(inner, {
                             'background-color': bgColor,
                             'border-top': computed.borderTop,
                             'border-right': computed.borderRight,
@@ -389,7 +394,7 @@ export class PreviewService {
                         element.appendChild(inner);
 
                         // Make the outer element a neutral spacing container.
-                        element.setCssProps({
+                        setExportStyles(element, {
                             'background-color': fallbackBg,
                             border: '0',
                             'border-radius': '0',
@@ -407,7 +412,7 @@ export class PreviewService {
                         if (mt > 0) {
                             // Note: some blocks may have had padding moved to an inner wrapper above.
                             const pt = parseFloat(element.getCssPropertyValue('padding-top')) || parseFloat(computed.paddingTop) || 0;
-                            element.setCssProps({
+                            setExportStyles(element, {
                                 'padding-top': `${pt + mt}px`,
                                 'margin-top': '0',
                             });
@@ -416,11 +421,11 @@ export class PreviewService {
                             // Keep spacing at the end of the container, otherwise rely on next element's top spacing.
                             if (isLast) {
                                 const pb = parseFloat(element.getCssPropertyValue('padding-bottom')) || parseFloat(computed.paddingBottom) || 0;
-                                element.setCssProps({
+                                setExportStyles(element, {
                                     'padding-bottom': `${pb + mb}px`,
                                 });
                             }
-                            element.setCssProps({ 'margin-bottom': '0' });
+                            setExportStyles(element, { 'margin-bottom': '0' });
                         }
                     }
 
@@ -429,7 +434,7 @@ export class PreviewService {
                     if (!isCodeLike && !inCodeSection && baseFontFamily) {
                         const current = getInlineStyleProp(element, 'font-family');
                         if (!current || isInheritLike(current)) {
-                            element.setCssProps({ 'font-family': baseFontFamily });
+                            setExportStyles(element, { 'font-family': baseFontFamily });
                         }
                     }
 
@@ -437,7 +442,7 @@ export class PreviewService {
                     if (!isCodeLike && !inCodeSection && !isHeading && baseFontSize) {
                         const current = getInlineStyleProp(element, 'font-size');
                         if (!current || isInheritLike(current)) {
-                            element.setCssProps({ 'font-size': baseFontSize });
+                            setExportStyles(element, { 'font-size': baseFontSize });
                         }
                     }
 
@@ -450,21 +455,21 @@ export class PreviewService {
                     ) {
                         const current = getInlineStyleProp(element, 'line-height');
                         if (!current || isInheritLike(current)) {
-                            element.setCssProps({ 'line-height': baseLineHeight });
+                            setExportStyles(element, { 'line-height': baseLineHeight });
                         }
                     }
 
                     if (!isCodeLike && !inCodeSection && baseTextAlign) {
                         const current = getInlineStyleProp(element, 'text-align');
                         if (!current || isInheritLike(current)) {
-                            element.setCssProps({ 'text-align': baseTextAlign });
+                            setExportStyles(element, { 'text-align': baseTextAlign });
                         }
                     }
 
                     if (!isCodeLike && !inCodeSection && baseColor) {
                         const current = getInlineStyleProp(element, 'color');
                         if (!current || isInheritLike(current)) {
-                            element.setCssProps({ color: baseColor });
+                            setExportStyles(element, { color: baseColor });
                         }
                     }
                 }
@@ -703,6 +708,7 @@ export class PreviewService {
     }
 
     private copyViaElectron(html: string, plainText: string): boolean {
+        if (!Platform.isDesktopApp) return false;
         try {
             type ElectronClipboard = {
                 write: (data: { html: string; text: string }) => void;
@@ -735,7 +741,7 @@ export class PreviewService {
         try {
             if (document.hasFocus && !document.hasFocus()) {
                 window.focus();
-                await new Promise(resolve => setTimeout(resolve, 120));
+                await new Promise(resolve => window.setTimeout(resolve, 120));
             }
 
             await clipboard.write([

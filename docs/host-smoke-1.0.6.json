@@ -1,0 +1,28 @@
+{
+  "vault": "AIWXEdit-QA",
+  "version": "1.0.6",
+  "checks": [
+    "three-file installation",
+    "six offline themes",
+    "Chinese preview",
+    "inline styles",
+    "Markdown table",
+    "code highlighting",
+    "clipboard HTML preparation",
+    "HTML sanitization",
+    "out-of-order renders",
+    "view close/reopen cleanup",
+    "missing-account state",
+    "plugin reload"
+  ],
+  "previewListeners": 1,
+  "themes": [
+    "default",
+    "graphite",
+    "green",
+    "orange",
+    "purple",
+    "red"
+  ],
+  "hostErrors": []
+}

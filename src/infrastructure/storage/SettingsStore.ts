@@ -48,7 +48,7 @@ export class SettingsStore {
             throw new Error('SettingsStore not initialized');
         }
 
-        const data = await this.plugin.loadData();
+        const data = await this.plugin.loadData() as Partial<PluginSettings> | null;
         if (data) {
             // Deep merge with defaults to handle new settings fields
             this.settings = this.mergeSettings(DEFAULT_SETTINGS, data);

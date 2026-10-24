@@ -92,7 +92,7 @@ export class AIClient {
                 body: JSON.stringify(body),
             });
 
-            const data = response.json;
+            const data = response.json as { choices?: Array<{ message?: { content?: string } }> };
 
             // Extract content from response
             if (data.choices && data.choices.length > 0) {
@@ -171,7 +171,7 @@ export class AIClient {
                 }),
             });
 
-            const data = response.json;
+            const data = response.json as { data?: Array<{ url?: string; b64_json?: string }> };
 
             if (data.data && data.data.length > 0) {
                 return {

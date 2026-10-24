@@ -113,17 +113,17 @@ export class CoverPickerModal extends Modal {
     }
 
     private buildMaterialCard(item: MaterialItem): HTMLElement {
-        const card = document.createElement('button');
+        const card = createEl('button');
         card.type = 'button';
         card.className = 'wdwxedit-cover-card';
         card.title = item.name || item.media_id;
 
-        const img = document.createElement('img');
+        const img = createEl('img');
         img.className = 'wdwxedit-cover-thumb';
         img.alt = item.name || 'cover';
         if (item.url) img.src = item.url;
 
-        const meta = document.createElement('div');
+        const meta = createDiv();
         meta.className = 'wdwxedit-cover-meta';
         meta.textContent = item.name || item.media_id.slice(0, 12) + '...';
 

@@ -313,7 +313,7 @@ export class InlineStyleRenderer {
                         const existing = elementMap.get(prop);
                         if (!existing || spec > existing.spec || (spec === existing.spec && order >= existing.order)) {
                             const htmlEl = el as HTMLElement;
-                            htmlEl.setCssProps({ [prop]: value } as Record<string, string>);
+                            htmlEl.setCssProps({ [prop]: value });
                             elementMap.set(prop, { spec, order });
                         }
                     }

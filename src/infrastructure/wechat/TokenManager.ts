@@ -60,7 +60,7 @@ export class TokenManager {
                 method: 'GET',
             });
 
-            const data = response.json;
+            const data = response.json as AccessTokenResponse & Partial<WechatAPIError>;
 
             // Check for error response
             if (data.errcode) {
