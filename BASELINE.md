@@ -51,3 +51,9 @@
 ```text
 C:\Users\Hex\.codex\backups\AIWXEdit\20261024-114928
 ```
+
+## 2026-10-24 版本链对齐(发布准备)
+
+上架诊断结论:插件从未进入官方审核队列(无 obsidian-releases 提交记录,目录未收录),且"默认分支 manifest 必须有同版本公开 Release"的硬性校验不满足(manifest 为 1.0.1,而 Release 只有 1.0.4/1.0.5)。
+
+按发布门禁修复:源码在 1.0.5 后有变更,不复用旧版本号、不覆盖已发布资产,统一升版为 **1.0.6**(manifest.json、package.json、package-lock.json、versions.json),tag `1.0.6` 指向本次提交,由现有 release workflow 构建并发布三个官方资产。
