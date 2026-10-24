@@ -17,7 +17,7 @@ This project includes code derived from the following third-party project(s).
    - License: No license file found in the upstream repository at the time of writing.
    - How it is used here:
      - Theme metadata and compatibility handling for theme CSS (including legacy `.wdwxedit` selector rewriting).
-     - This repository may include local backup copies under `assets_backup/` for development/reference.
+     - This repository includes the installed Obsidian baseline CSS under `assets/themes/`, with metadata in `assets/themes.json`; historical copies remain under `assets_backup/`.
      - Obsidian release artifacts for this plugin only ship `main.js`, `manifest.json`, and `styles.css` (no theme packs).
    - Note:
      - If you plan to redistribute any CSS originating from that repository (directly or via a CDN), you should obtain an explicit license/permission from the upstream author first.
@@ -26,3 +26,10 @@ This project includes code derived from the following third-party project(s).
    - Repository: https://github.com/doocs/md
    - License: WTFPL
    - License text: LICENSES/doocs-md-WTFPL.txt
+
+4) highlight.js
+   - Repository: https://github.com/highlightjs/highlight.js
+   - License: BSD-3-Clause
+   - Copyright: (c) 2006 Ivan Sagalaev
+   - License text: LICENSES/highlight.js-BSD-3-Clause.txt
+   - Scope: Syntax highlighting dependency and installed highlight styles under `assets/highlights/`.

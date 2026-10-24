@@ -83,15 +83,38 @@ export class WechatClient {
         }
     }
 
+    /**
+     * Check whether an error message indicates an invalid/expired access token
+     */
+    private isTokenError(error?: string): boolean {
+        return typeof error === 'string' && /\b(40001|40014|41001|42001)\b/.test(error);
+    }
+
+    /**
+     * Run a WeChat API operation; on token expiry, refresh the token and retry once
+     */
+    private async withTokenRetry<T extends { success: boolean; error?: string }>(
+        operation: () => Promise<T>
+    ): Promise<T> {
+        let result = await operation();
+        if (!result.success && this.isTokenError(result.error)) {
+            await this.refreshToken();
+            result = await operation();
+        }
+        return result;
+    }
+
     // ==================== Image Operations ====================
 
     /**
      * Get or create image uploader
      */
     private async getImageUploader(): Promise<ImageUploader> {
+        const token = await this.getToken();
         if (!this.imageUploader) {
-            const token = await this.getToken();
             this.imageUploader = createImageUploader(token);
+        } else {
+            this.imageUploader.setToken(token);
         }
         return this.imageUploader;
     }
@@ -105,7 +128,7 @@ export class WechatClient {
         type: UploadMaterialType = 'image'
     ): Promise<ImageUploadResult> {
         const uploader = await this.getImageUploader();
-        return uploader.uploadBlob(data, filename, type);
+        return this.withTokenRetry(() => uploader.uploadBlob(data, filename, type));
     }
 
     /**
@@ -118,15 +141,17 @@ export class WechatClient {
         type: UploadMaterialType = 'image'
     ): Promise<ImageUploadResult> {
         const uploader = await this.getImageUploader();
-        return uploader.uploadBuffer(buffer, filename, mimeType, type);
+        return this.withTokenRetry(() => uploader.uploadBuffer(buffer, filename, mimeType, type));
     }
 
     // ==================== Material Operations ====================
 
     private async getMaterialManager(): Promise<MaterialManager> {
+        const token = await this.getToken();
         if (!this.materialManager) {
-            const token = await this.getToken();
             this.materialManager = createMaterialManager(token);
+        } else {
+            this.materialManager.setToken(token);
         }
         return this.materialManager;
     }
@@ -137,7 +162,7 @@ export class WechatClient {
         offset: number = 0
     ): Promise<ListMaterialsResult> {
         const manager = await this.getMaterialManager();
-        return manager.listMaterials(type, offset, count);
+        return this.withTokenRetry(() => manager.listMaterials(type, offset, count));
     }
 
     // ==================== Draft Operations ====================
@@ -146,9 +171,11 @@ export class WechatClient {
      * Get or create draft publisher
      */
     private async getDraftPublisher(): Promise<DraftPublisher> {
+        const token = await this.getToken();
         if (!this.draftPublisher) {
-            const token = await this.getToken();
             this.draftPublisher = createDraftPublisher(token);
+        } else {
+            this.draftPublisher.setToken(token);
         }
         return this.draftPublisher;
     }
@@ -158,7 +185,7 @@ export class WechatClient {
      */
     async createDraft(article: DraftArticle): Promise<DraftResponse> {
         const publisher = await this.getDraftPublisher();
-        return publisher.createDraft(article);
+        return this.withTokenRetry(() => publisher.createDraft(article));
     }
 
     /**
@@ -166,7 +193,7 @@ export class WechatClient {
      */
     async updateDraft(mediaId: string, article: DraftArticle, index: number = 0): Promise<DraftResponse> {
         const publisher = await this.getDraftPublisher();
-        return publisher.updateDraft(mediaId, article, index);
+        return this.withTokenRetry(() => publisher.updateDraft(mediaId, article, index));
     }
 
     /**
@@ -174,7 +201,7 @@ export class WechatClient {
      */
     async deleteDraft(mediaId: string): Promise<{ success: boolean; error?: string }> {
         const publisher = await this.getDraftPublisher();
-        return publisher.deleteDraft(mediaId);
+        return this.withTokenRetry(() => publisher.deleteDraft(mediaId));
     }
 
     /**
@@ -182,12 +209,12 @@ export class WechatClient {
      */
     async getDraftCount(): Promise<{ success: boolean; count?: number; error?: string }> {
         const publisher = await this.getDraftPublisher();
-        return publisher.getDraftCount();
+        return this.withTokenRetry(() => publisher.getDraftCount());
     }
 
     async batchGetDrafts(offset: number = 0, count: number = 20, noContent: boolean = false): Promise<BatchGetDraftsResult> {
         const publisher = await this.getDraftPublisher();
-        return publisher.batchGetDrafts(offset, count, noContent);
+        return this.withTokenRetry(() => publisher.batchGetDrafts(offset, count, noContent));
     }
 
     /**

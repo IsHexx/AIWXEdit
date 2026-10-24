@@ -30,7 +30,7 @@ class SelectorWeight {
         // Simplified parser for weight calculation
         // Matches #id, .class, [attr], and element names
         // Only use lookahead (no lookbehind) for iOS compatibility.
-        const parts = selector.split(/(?=[#.[\\[]])/);
+        const parts = selector.split(/(?=[#.[\\[])/);
 
         for (const part of parts) {
             const trimmed = part.trim();

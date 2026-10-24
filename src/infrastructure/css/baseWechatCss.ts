@@ -114,6 +114,11 @@ export const BASE_WECHAT_CSS = `
   padding: 0;
   padding-left: 0;
   margin: 0;
+  /* Longhand margins: a theme's margin-top/bottom on ul would otherwise
+     survive the margin: 0 shorthand above and vertically offset the gutter
+     from the code lines. */
+  margin-top: 0;
+  margin-bottom: 0;
   line-height: 26px;
   font-family: inherit;
   list-style-type: none;
@@ -123,16 +128,20 @@ export const BASE_WECHAT_CSS = `
   text-align: right;
   color: #8c959f;
   margin: 0;
+  margin-top: 0;
+  margin-bottom: 0;
   padding: 0px 10px 0px 0px;
   min-width: 2ch;
   line-height: 26px;
   height: 26px;
   font-family: inherit;
-  
+
 }
 
 .wx-article .code-section pre {
   margin: 0;
+  margin-top: 0;
+  margin-bottom: 0;
   margin-block-start: 0;
   margin-block-end: 0;
   overflow: auto;
@@ -150,15 +159,18 @@ export const BASE_WECHAT_CSS = `
   background-color: transparent;
   border-radius: 0;
   padding: 0;
+  margin: 0;
   line-height: inherit;
   font-size: inherit;
-  display: flex;
-  white-space: nowrap;
+  display: block;
+  /* Lines are separated by <br/> inside a single <code>; keep text verbatim
+     and never wrap, so long lines scroll horizontally instead of breaking
+     the line-number alignment. */
+  white-space: pre;
   text-wrap: nowrap;
   word-break: normal;
   overflow-wrap: normal;
   font-family: inherit;
-  line-height: inherit;
   max-width: 100%;
 }
 

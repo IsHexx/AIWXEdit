@@ -196,7 +196,7 @@ export class CodeBlockPlugin extends BaseMarkdownPlugin {
 
         // Build HTML using Builder pattern
         const lineListBuilder = new HtmlBuilder();
-        const codeExecutorBuilder = new HtmlBuilder();
+        const processedLines: string[] = [];
 
         rawLines.forEach((lineHtml, index) => {
             // Apply whitespace sanitization logic inline.
@@ -207,7 +207,7 @@ export class CodeBlockPlugin extends BaseMarkdownPlugin {
             }).join('');
 
             lineListBuilder.append(`<li>${index + 1}</li>`);
-            codeExecutorBuilder.append(`<code>${processedLine}</code>`);
+            processedLines.push(processedLine);
         });
 
         const rootClasses = ['code-section', 'code-snippet__fix', 'hljs'];
@@ -216,6 +216,9 @@ export class CodeBlockPlugin extends BaseMarkdownPlugin {
         // Inline Styles Definition - Explicitly defined here
         const listStyle = 'margin:0; padding:0 8px 0 0; list-style:none; text-align:right; color:#999; border-right:1px solid #ddd; flex-shrink:0;';
         const preStyle = 'margin:0; padding:0 0 0 8px; overflow:auto; white-space:normal; flex-grow:1;';
+        // All lines live in ONE <code> joined by <br/>: block-level children inside <pre>
+        // get extra blank lines inserted by the WeChat (UEditor) editor, so avoid them.
+        const codeStyle = 'display:block; white-space:pre; background:transparent; background-color:transparent; border-radius:0; padding:0; margin:0; line-height:inherit; font-size:inherit; font-family:inherit; max-width:100%;';
         const sectionStyle = 'display: flex; gap: 8px; font-size: 13px; line-height: 1.5; padding: 10px; border-radius: 4px; overflow-x: auto;';
 
         // Manual assembly for final structure to guarantee WeChat compatibility
@@ -225,7 +228,7 @@ export class CodeBlockPlugin extends BaseMarkdownPlugin {
             output += `<ul style="${listStyle}">${lineListBuilder.toString()}</ul>`;
         }
 
-        output += `<pre class="${langName ? 'hljs language-' + langName : 'hljs'}" style="${preStyle}">${codeExecutorBuilder.toString()}</pre>`;
+        output += `<pre class="${langName ? 'hljs language-' + langName : 'hljs'}" style="${preStyle}"><code style="${codeStyle}">${processedLines.join('<br/>')}</code></pre>`;
         output += `</section>`;
 
         return output;
