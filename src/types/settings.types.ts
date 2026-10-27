@@ -27,7 +27,7 @@ export interface WechatAccountConfig {
 /**
  * Link display style options
  */
-export type LinkStyle = 'footnote' | 'inline' | 'hidden';
+export type LinkStyle = 'original' | 'footnote' | 'inline' | 'hidden';
 
 /**
  * Embed block display style options
@@ -132,7 +132,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
         coverModel: 'flux-schnell-free',
         enableCover: true,
     },
-    linkStyle: 'footnote',
+    linkStyle: 'original',
     embedStyle: 'quote',
     showStyleUI: true,
 };

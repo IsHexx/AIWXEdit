@@ -52,6 +52,9 @@ export class SettingsStore {
         if (data) {
             // Deep merge with defaults to handle new settings fields
             this.settings = this.mergeSettings(DEFAULT_SETTINGS, data);
+            if (data.linkStyle === 'footnote') {
+                await this.save();
+            }
         } else {
             this.settings = { ...DEFAULT_SETTINGS };
         }
@@ -241,7 +244,7 @@ export class SettingsStore {
                 ...defaults.ai,
                 ...(data.ai ?? {}),
             },
-            linkStyle: data.linkStyle ?? defaults.linkStyle,
+            linkStyle: data.linkStyle === 'footnote' ? 'original' : (data.linkStyle ?? defaults.linkStyle),
             embedStyle: data.embedStyle ?? defaults.embedStyle,
             showStyleUI: data.showStyleUI ?? defaults.showStyleUI,
         };

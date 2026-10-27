@@ -13,6 +13,7 @@ Format Markdown notes for WeChat Official Accounts (微信公众号), preview th
 - **WeChat publishing** — manage multiple Official Accounts, pick a cover (default or upload), and create or update drafts in the WeChat **draft box** with one click.
 - **Local image upload** — when an account is configured, copying or publishing uploads local article images to WeChat so they display correctly in the editor.
 - **Rich-text copying** — one click copies formatted HTML and plain text for pasting into the WeChat editor or other tools.
+- **Original links** — link destinations stay on their original text, without numbered citations or an appended reference section. Reference-list entries such as `[Name]：https://example.com` are also supported.
 - **Optional AI assistance** — title suggestions and AI cover generation through your own OpenAI-compatible provider (presets for OpenAI, OpenRouter, DeepSeek, Kimi/Moonshot, and Zhipu).
 - **Entry points** — ribbon icon, command palette (**打开发布视图**, **发布当前笔记**), and a right-click menu item on Markdown files.
 
@@ -98,6 +99,7 @@ MIT; see [LICENSE](LICENSE). Code block rendering and WeChat HTML compatibility 
 - **富文本复制** —— 一键复制排版后的 HTML 与纯文本，可直接粘贴到微信编辑器或其他工具。
 - **可选 AI 智能服务** —— 通过你自己的 OpenAI 兼容接口生成标题建议与 AI 封面（内置 OpenAI、OpenRouter、DeepSeek、Kimi/Moonshot、智谱 预设）。
 - **多种入口** —— 左侧 ribbon 图标、命令面板（**打开发布视图**、**发布当前笔记**）、Markdown 文件右键菜单。
+- **原文链接** —— 网址直接保留在链接名称上，不添加论文式编号或文末参考链接列表；也支持参考资料中的 `[名称]：https://example.com` 写法。
 
 界面以中文为主。暂不支持 LaTeX 公式渲染。
 

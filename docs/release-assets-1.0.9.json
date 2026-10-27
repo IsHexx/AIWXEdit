@@ -1,0 +1,20 @@
+{
+  "version": "1.0.9",
+  "assets": [
+    {
+      "name": "main.js",
+      "bytes": 2200199,
+      "sha256": "e958fa699cf8b3d9b115479d7e5deb8109f29f02185318109927d0b556a3e0a8"
+    },
+    {
+      "name": "manifest.json",
+      "bytes": 364,
+      "sha256": "926cea7b90c6b39f1af574fdfe1d86008af0f8b980dd384c3412baa813096b38"
+    },
+    {
+      "name": "styles.css",
+      "bytes": 18861,
+      "sha256": "4b0cb831314d8baed1e71f71ce949dcd84897d7fba348a54fa22e477759460fb"
+    }
+  ]
+}

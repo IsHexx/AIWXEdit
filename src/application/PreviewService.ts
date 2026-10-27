@@ -249,26 +249,17 @@ export class PreviewService {
             const baseColor = articleStyle.color ? this.normalizeWechatColor(articleStyle.color) : '';
             const baseTextAlign = articleStyle.textAlign || '';
 
-            const rootPadLeft = parseFloat(articleStyle.paddingLeft) || 0;
-            const rootPadRight = parseFloat(articleStyle.paddingRight) || 0;
-            const rootPadTop = parseFloat(articleStyle.paddingTop) || 0;
-            const rootPadBottom = parseFloat(articleStyle.paddingBottom) || 0;
-
             // Wrap everything into a clean <section> root (WeChat paste tends to keep it more consistently than div wrappers).
             const wrapper = createEl('section');
             // Keep the original class so copy/selection fallbacks treat it as the article root.
             wrapper.classList.add('wx-article');
-            const wrapperStyle: string[] = [];
+            const wrapperStyle: string[] = ['margin: 0', 'padding: 0'];
             if (baseFontFamily) wrapperStyle.push(`font-family: ${baseFontFamily}`);
             if (baseFontSize) wrapperStyle.push(`font-size: ${baseFontSize}`);
             if (baseLineHeight && !isInheritLike(baseLineHeight)) wrapperStyle.push(`line-height: ${baseLineHeight}`);
             if (baseColor) wrapperStyle.push(`color: ${baseColor}`);
             if (baseTextAlign) wrapperStyle.push(`text-align: ${baseTextAlign}`);
             if (effectiveBg) wrapperStyle.push(`background-color: ${effectiveBg}`);
-            // Keep the same outer padding as the preview container (avoid multiplying padding onto children).
-            if (rootPadLeft || rootPadRight || rootPadTop || rootPadBottom) {
-                wrapperStyle.push(`padding: ${rootPadTop}px ${rootPadRight}px ${rootPadBottom}px ${rootPadLeft}px`);
-            }
             if (wrapperStyle.length > 0) wrapper.setAttribute('style', `${wrapperStyle.join('; ')};`);
 
             while (article.firstChild) {

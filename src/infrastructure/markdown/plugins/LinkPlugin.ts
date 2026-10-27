@@ -2,6 +2,7 @@
  * Link Plugin
  * 
  * Handles link rendering with different styles:
+ * - original: Keep the destination on the original link text (default)
  * - footnote: Convert to numbered footnotes
  * - inline: Show URL inline
  * - hidden: Hide links, show text only
@@ -25,7 +26,7 @@ export interface LinkOptions {
  * Default options
  */
 const DEFAULT_OPTIONS: LinkOptions = {
-    style: 'footnote',
+    style: 'original',
     footnoteFormat: '[{n}]',
 };
 
@@ -38,7 +39,7 @@ export class LinkPlugin extends BaseMarkdownPlugin {
     readonly meta: PluginMeta = {
         id: 'link',
         name: 'Link',
-        description: 'Custom link rendering with footnotes',
+        description: 'Preserve original links with optional alternate rendering',
         priority: PluginPriority.NORMAL,
     };
 
@@ -67,23 +68,36 @@ export class LinkPlugin extends BaseMarkdownPlugin {
     }
 
     getExtension(): MarkedExtension {
-        // Use type assertion due to marked.js version type inconsistencies
         const renderer = {
-            link: (token: unknown): string | false => {
-                const t = (token && typeof token === 'object')
-                    ? (token as { href?: unknown; title?: unknown; text?: unknown })
-                    : undefined;
-
-                const href = typeof token === 'string' ? token : (typeof t?.href === 'string' ? t.href : '');
-                const title = typeof token === 'string' ? null : (typeof t?.title === 'string' ? t.title : null);
-                const text = typeof token === 'string' ? '' : (typeof t?.text === 'string' ? t.text : '');
-
+            // marked 12 passes three arguments, including the rendered link label.
+            link: (href: string, title: string | null | undefined, text: string): string => {
                 if (!href) return text;
-                return this.renderLink(href, title, text);
+                return this.renderLink(href, title ?? null, text);
             },
         };
 
-        return { renderer };
+        return {
+            renderer,
+            extensions: [{
+                name: 'namedReferenceLink',
+                level: 'inline',
+                start: (src) => src.indexOf('['),
+                tokenizer(src) {
+                    // Accept pasted reference-list entries such as [名称]：https://example.com.
+                    // Inline tokenization leaves code spans and fenced blocks untouched.
+                    const match = /^\[([^\]\n]+)\][：:][ \t]*(https?:\/\/[^\s<>]+)/.exec(src);
+                    if (!match) return;
+                    return {
+                        type: 'link',
+                        raw: match[0],
+                        href: match[2],
+                        title: null,
+                        text: match[1],
+                        tokens: this.lexer.inlineTokens(match[1]),
+                    };
+                },
+            }],
+        };
     }
 
     /**
@@ -92,10 +106,12 @@ export class LinkPlugin extends BaseMarkdownPlugin {
     private renderLink(href: string, title: string | null, text: string): string {
         // Skip if it's an image link or internal anchor
         if (href.startsWith('#') || href.startsWith('data:')) {
-            return `<a href="${href}">${text}</a>`;
+            return this.renderOriginalLink(href, title, text);
         }
 
         switch (this.options.style) {
+            case 'original':
+                return this.renderOriginalLink(href, title, text);
             case 'footnote':
                 return this.renderFootnoteLink(href, title, text);
             case 'inline':
@@ -103,8 +119,18 @@ export class LinkPlugin extends BaseMarkdownPlugin {
             case 'hidden':
                 return this.renderHiddenLink(text);
             default:
-                return this.renderFootnoteLink(href, title, text);
+                return this.renderOriginalLink(href, title, text);
         }
+    }
+
+    private renderOriginalLink(href: string, title: string | null, text: string): string {
+        const escapeAttribute = (value: string) => value
+            .replace(/&(?!(?:#\d+|#x[\da-f]+|[a-z][\da-z]+);)/gi, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+        const titleAttribute = title ? ` title="${escapeAttribute(title)}"` : '';
+        return `<a href="${escapeAttribute(href)}"${titleAttribute}>${text}</a>`;
     }
 
     /**

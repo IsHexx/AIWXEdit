@@ -718,7 +718,8 @@ export class AssetStore {
     font-size: 16px;
     line-height: 1.6;
     color: #333;
-    padding: 20px;
+    margin: 0;
+    padding: 0;
 }
 /* ... truncated generic default theme ... */
 /* Retaining existing default theme CSS since I am not changing it, but the tool requires context. */

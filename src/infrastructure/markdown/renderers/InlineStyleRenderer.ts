@@ -248,7 +248,8 @@ export class InlineStyleRenderer {
             `font-size: ${options.fontSize || '16px'}`,
             'line-height: 1.6',
             'color: #333',
-            'padding: 20px',
+            'margin: 0',
+            'padding: 0',
         ].join('; ');
 
         return `<section class="wx-article" style="${baseStyle}">${content}</section>`;

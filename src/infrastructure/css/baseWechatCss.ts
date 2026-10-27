@@ -10,7 +10,8 @@ export const BASE_WECHAT_CSS = `
   font-size: 16px;
   line-height: 1.6;
   color: #333;
-  padding: 20px;
+  margin: 0;
+  padding: 0;
 }
 
 .wx-article p {

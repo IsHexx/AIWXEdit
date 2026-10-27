@@ -1,6 +1,6 @@
 {
     "name": "aiwxedit",
-    "version": "1.0.8",
+    "version": "1.0.9",
     "description": "Obsidian plugin for publishing notes to WeChat Official Account",
     "main": "main.js",
     "scripts": {
@@ -9,7 +9,8 @@
         "typecheck": "tsc --noEmit",
         "lint": "eslint src",
         "validate:release": "node scripts/validate-release.mjs",
-        "check": "npm run lint && npm run build && npm run validate:release"
+        "check": "npm run lint && npm run test:links && npm run build && npm run validate:release",
+        "test:links": "node tests/link-rendering.mjs"
     },
     "keywords": [
         "obsidian",

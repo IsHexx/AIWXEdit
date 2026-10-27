@@ -1,0 +1,37 @@
+{
+  "vault": "AIWXEdit-QA",
+  "version": "1.0.9",
+  "settingMigration": "passed",
+  "previewAndClipboard": [
+    {
+      "labels": [
+        "Real API Pricing：模型 API 价格对比",
+        "阿里云百炼模型定价",
+        "火山引擎"
+      ],
+      "hrefs": [
+        "https://real-api-pricing.vercel.app/#lang=en&view=table",
+        "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "https://www.volcengine.com"
+      ],
+      "footnotes": false,
+      "padding": "0px",
+      "margin": "0px"
+    },
+    {
+      "labels": [
+        "Real API Pricing：模型 API 价格对比",
+        "阿里云百炼模型定价",
+        "火山引擎"
+      ],
+      "hrefs": [
+        "https://real-api-pricing.vercel.app/#lang=en&view=table",
+        "https://help.aliyun.com/zh/model-studio/model-pricing",
+        "https://www.volcengine.com"
+      ],
+      "footnotes": false,
+      "padding": "0px",
+      "margin": "0px"
+    }
+  ]
+}

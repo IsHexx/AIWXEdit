@@ -86,6 +86,18 @@ export function postProcessInlinedWechatHtml(html: string): string {
     replaceChildrenWithHtml(container, html);
     doc.body.appendChild(container);
 
+    // Keep the article edge-to-edge after theme/custom CSS has been inlined.
+    // Reset only the root; lists, quotes, code blocks and cells keep their spacing.
+    const articleRoot = container.querySelector<HTMLElement>('.wx-article');
+    if (articleRoot) setExportStyles(articleRoot, {
+        margin: '0',
+        padding: '0',
+        'margin-inline': '0',
+        'margin-block': '0',
+        'padding-inline': '0',
+        'padding-block': '0',
+    });
+
     const isTransparent = (value: string) =>
         !value || value === 'transparent' || value === 'rgba(0, 0, 0, 0)';
 
