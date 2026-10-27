@@ -16,6 +16,10 @@ export interface WechatAccountConfig {
     appSecret: string;
     /** Default author name for articles */
     author?: string;
+    publishDefaults?: {
+        needOpenComment: boolean;
+        onlyFansCanComment: boolean;
+    };
     /** Default cover image (vault path, optional) */
     defaultCoverPath?: string;
     /** Default cover media id (optional) */

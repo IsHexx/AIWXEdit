@@ -15,6 +15,7 @@ import { BASE_WECHAT_CSS } from '../../infrastructure/css/baseWechatCss';
 import { generateHljsFallbackCss } from '../../infrastructure/markdown/plugins/codeThemes';
 import { getSettingsStore, getAssetStore } from '../../infrastructure/storage';
 import { replaceChildrenWithHtml } from '../../utils/dom';
+import { readPublishMetadata } from '../../application/publishOptions';
 
 /**
  * Frontmatter regex to strip from content
@@ -202,9 +203,9 @@ export class ArticleTransformer {
             const frontmatter = fileCache?.frontmatter;
 
             if (frontmatter) {
+                Object.assign(metadata, readPublishMetadata(frontmatter));
                 if (frontmatter.title) metadata.title = String(frontmatter.title);
                 if (frontmatter.author) metadata.author = String(frontmatter.author);
-                if (frontmatter.digest) metadata.digest = String(frontmatter.digest);
                 if (frontmatter.cover) metadata.cover = String(frontmatter.cover);
                 if (frontmatter.tags) {
                     metadata.tags = Array.isArray(frontmatter.tags)

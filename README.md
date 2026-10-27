@@ -10,7 +10,7 @@ Format Markdown notes for WeChat Official Accounts (微信公众号), preview th
 
 - **Markdown rendering** — headings, lists, tables, blockquotes, callouts, images, and code highlighting with optional line numbers.
 - **Theme system** — built-in article themes plus theme color, font family, and font size controls; a built-in theme market for article themes and 70+ code highlight styles with batch download and uninstall; custom CSS support.
-- **WeChat publishing** — manage multiple Official Accounts, pick a cover (default or upload), and create or update drafts in the WeChat **draft box** with one click.
+- **WeChat publishing** — a responsive draft composer with author/summary prefill, covers, original-page links, comment permissions, account defaults, and explicit selection of an existing draft article to update.
 - **Local image upload** — when an account is configured, copying or publishing uploads local article images to WeChat so they display correctly in the editor.
 - **Rich-text copying** — one click copies formatted HTML and plain text for pasting into the WeChat editor or other tools.
 - **Original links** — link destinations stay on their original text, without numbered citations or an appended reference section. Reference-list entries such as `[Name]：https://example.com` are also supported.
@@ -44,6 +44,10 @@ Only these three files are required. Default article styling and code highlighti
 3. Choose the account and article style. Select a cover, or choose one in the publishing dialog.
 4. Click the send button, review the title, cover, author, and summary, and confirm to create or update a WeChat draft.
 5. Review the draft in WeChat before publishing it to subscribers.
+
+The sidebar preview has reading space; copied and published article HTML keeps zero outer margins. The draft dialog reads note properties before account defaults, extracts a summary when none is provided, and lets you remember the author and comment permissions for each account. New drafts never silently replace a same-title article. To update a draft, explicitly select the article (including an individual article in a multi-article draft).
+
+Supported note properties include `title`, `author`, `digest` (also `summary`/`description`), `cover`, `content_source_url` (also `source_url`), `need_open_comment`, and `only_fans_can_comment`. Comment values accept YAML booleans or 0/1. Originality declarations, reprint permissions, rewards, paid content, and sending/scheduling still require confirmation in WeChat; the [public draft API](https://developers.weixin.qq.com/doc/service/api/draftbox/draftmanage/api_draft_add.html) does not expose an originality declaration parameter. The dialog shows this distinction before and after saving.
 
 The copy button writes formatted HTML and plain text to your clipboard. **When an account is configured, copying also attempts to upload local article images to WeChat**, so pasted images can be displayed there. Without an account, local images are embedded where supported. Clipboard capabilities vary between desktop and mobile; plain-text copying is the final fallback.
 
@@ -94,7 +98,7 @@ MIT; see [LICENSE](LICENSE). Code block rendering and WeChat HTML compatibility 
 
 - **Markdown 渲染** —— 支持标题、列表、表格、引用、Callout、图片，以及可开关行号的代码高亮。
 - **主题系统** —— 内置多套文章主题，支持主题色、字体、字号调节；内置主题市场，提供文章主题与 70+ 代码高亮样式的批量下载与卸载；支持自定义 CSS。
-- **公众号发布** —— 管理多个公众号，选择封面（默认或上传），一键创建/更新到微信**草稿箱**。
+- **公众号发布** —— 自适应草稿弹窗，支持作者与摘要预填、封面、阅读原文链接、留言权限、账号默认偏好，以及选择具体草稿文章进行更新。
 - **本地图片上传** —— 配置公众号后，复制或发布会自动把文中本地图片上传到微信素材库，保证编辑器内正常显示。
 - **富文本复制** —— 一键复制排版后的 HTML 与纯文本，可直接粘贴到微信编辑器或其他工具。
 - **可选 AI 智能服务** —— 通过你自己的 OpenAI 兼容接口生成标题建议与 AI 封面（内置 OpenAI、OpenRouter、DeepSeek、Kimi/Moonshot、智谱 预设）。
@@ -128,6 +132,10 @@ MIT; see [LICENSE](LICENSE). Code block rendering and WeChat HTML compatibility 
 3. 选择公众号与文章样式，选择或上传封面。
 4. 点击发送按钮，核对标题、封面、作者与摘要，确认后创建或更新微信草稿。
 5. 回到微信公众平台审阅草稿，再自行发布给订阅者。
+
+侧栏预览保留阅读留白，复制和发布的文章 HTML 保持外层零边距。弹窗优先读取笔记属性，再使用账号默认值；未设置摘要时从正文提取。可勾选记住该账号的作者和留言权限。默认新建草稿，不会自动覆盖同名文章；更新时需明确选择文章，多图文草稿可以选择其中一篇。
+
+可预填的笔记属性：`title`、`author`、`digest`（也支持 `summary` / `description`）、`cover`、`content_source_url`（也支持 `source_url`）、`need_open_comment`、`only_fans_can_comment`。留言属性支持 YAML 布尔值或 0/1。原创声明、转载权限、赞赏、付费、群发与定时发送仍需在微信后台确认；[公开草稿接口](https://developers.weixin.qq.com/doc/service/api/draftbox/draftmanage/api_draft_add.html)未提供原创声明参数，弹窗会在保存前后提示。
 
 复制按钮会把排版后的 HTML 与纯文本写入剪贴板。**配置公众号后，复制时会同时尝试上传文中本地图片到微信**，使粘贴的图片可以正常显示；未配置公众号时，本地图片在支持的场景下以内嵌方式处理。桌面与移动端剪贴板能力不同，纯文本复制是最终兜底。
 

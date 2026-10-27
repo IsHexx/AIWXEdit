@@ -11,7 +11,7 @@ import type { MaterialItem } from '../../types/wechat.types';
 export interface CoverPickerModalOptions {
     appId: string;
     appSecret: string;
-    onPicked: (picked: { type: 'media'; mediaId: string }) => void;
+    onPicked: (picked: { type: 'media'; mediaId: string; previewUrl?: string }) => void;
 }
 
 export class CoverPickerModal extends Modal {
@@ -131,7 +131,7 @@ export class CoverPickerModal extends Modal {
         card.appendChild(meta);
 
         card.addEventListener('click', () => {
-            this.options.onPicked({ type: 'media', mediaId: item.media_id });
+            this.options.onPicked({ type: 'media', mediaId: item.media_id, previewUrl: item.url });
             this.close();
         });
 
@@ -146,7 +146,7 @@ export class CoverPickerModal extends Modal {
             return;
         }
 
-        this.options.onPicked({ type: 'media', mediaId: upload.mediaId });
+        this.options.onPicked({ type: 'media', mediaId: upload.mediaId, previewUrl: upload.url });
         new Notice('封面已上传');
         this.close();
     }

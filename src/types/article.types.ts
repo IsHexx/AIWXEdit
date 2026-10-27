@@ -16,6 +16,9 @@ export interface ArticleMetadata {
     author?: string;
     /** Article digest/summary */
     digest?: string;
+    contentSourceUrl?: string;
+    needOpenComment?: boolean;
+    onlyFansCanComment?: boolean;
     /** Cover image path (vault relative) */
     cover?: string;
     /** Tags */

@@ -12,6 +12,7 @@ import { getArticleTransformer } from '../domain/article';
 import { getWechatClient, WechatClient } from '../infrastructure/wechat';
 import { getSettingsStore } from '../infrastructure/storage';
 import { clearChildren, replaceChildrenWithHtml, setExportStyles } from '../utils/dom';
+import { getPublishDefaults, validatePublishFields } from './publishOptions';
 
 /**
  * Publish options
@@ -31,6 +32,10 @@ export interface PublishOptions {
     coverPath?: string;
     /** Whether to update existing draft */
     existingDraftId?: string;
+    existingDraftIndex?: number;
+    contentSourceUrl?: string;
+    needOpenComment?: boolean;
+    onlyFansCanComment?: boolean;
 }
 
 /**
@@ -91,6 +96,16 @@ export class PublishService {
             // Transform article
             const transformer = getArticleTransformer();
             const article = await transformer.transformFile(file);
+            const defaults = getPublishDefaults(article.metadata, account);
+            const fields = {
+                title: (options.title ?? article.metadata.title).trim(),
+                author: (options.author ?? defaults.author).trim(),
+                digest: (options.digest ?? article.metadata.digest ?? '').trim(),
+                contentSourceUrl: (options.contentSourceUrl ?? defaults.contentSourceUrl).trim(),
+                existingDraftIndex: options.existingDraftIndex,
+            };
+            const validationError = validatePublishFields(fields);
+            if (validationError) return { success: false, error: validationError };
 
             // Get WeChat client
             const client = getWechatClient(account.appId, account.appSecret);
@@ -147,30 +162,19 @@ export class PublishService {
 
             // Build draft article
             const draftArticle: DraftArticle = {
-                title: options.title || article.metadata.title,
+                ...fields,
                 content,
-                author: options.author || article.metadata.author || account.author,
-                digest: options.digest || article.metadata.digest || '',
                 thumbMediaId: coverMediaId,
-                needOpenComment: 0,
-                onlyFansCanComment: 0,
+                needOpenComment: (options.needOpenComment ?? defaults.needOpenComment) ? 1 : 0,
+                onlyFansCanComment: (options.needOpenComment ?? defaults.needOpenComment) && (options.onlyFansCanComment ?? defaults.onlyFansCanComment) ? 1 : 0,
             };
 
             // Publish or update
             let result: DraftResponse;
             if (options.existingDraftId) {
-                result = await client.updateDraft(options.existingDraftId, draftArticle);
+                result = await client.updateDraft(options.existingDraftId, draftArticle, options.existingDraftIndex ?? 0);
             } else {
-                const titleToCheck = (draftArticle.title || '').trim();
-                const existing = titleToCheck ? await client.findDraftByTitle(titleToCheck, { maxScan: 100 }) : { success: true };
-                if (!existing.success) {
-                    return { success: false, error: existing.error || 'Failed to check existing drafts' };
-                }
-                if (existing.mediaId) {
-                    result = await client.updateDraft(existing.mediaId, draftArticle, existing.index ?? 0);
-                } else {
-                    result = await client.createDraft(draftArticle);
-                }
+                result = await client.createDraft(draftArticle);
             }
 
             if (!result.success) {
