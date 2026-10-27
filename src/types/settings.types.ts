@@ -43,6 +43,12 @@ export type EmbedStyle = 'quote' | 'inline' | 'hidden';
  */
 export type AICoverMethod = 'image' | 'html';
 
+export interface PreviewPreferences {
+    width: 'mobile' | 'desktop' | 'fluid';
+    syncScroll: boolean;
+    focusMode: boolean;
+}
+
 /**
  * Article styling configuration
  */
@@ -107,6 +113,7 @@ export interface PluginSettings {
     embedStyle: EmbedStyle;
     /** Show style editor UI */
     showStyleUI: boolean;
+    preview: PreviewPreferences;
 }
 
 /**
@@ -139,4 +146,5 @@ export const DEFAULT_SETTINGS: PluginSettings = {
     linkStyle: 'original',
     embedStyle: 'quote',
     showStyleUI: true,
+    preview: { width: 'mobile', syncScroll: true, focusMode: false },
 };

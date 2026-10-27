@@ -8,6 +8,7 @@
 import type { Plugin } from 'obsidian';
 import type { PluginSettings, WechatAccountConfig, StyleConfig, AIConfig } from '../../types/settings.types';
 import { DEFAULT_SETTINGS } from '../../types/settings.types';
+import { normalizePreviewPreferences } from '../../utils/previewPresentation';
 
 /**
  * Settings Store
@@ -247,6 +248,7 @@ export class SettingsStore {
             linkStyle: data.linkStyle === 'footnote' ? 'original' : (data.linkStyle ?? defaults.linkStyle),
             embedStyle: data.embedStyle ?? defaults.embedStyle,
             showStyleUI: data.showStyleUI ?? defaults.showStyleUI,
+            preview: normalizePreviewPreferences(data.preview),
         };
     }
 

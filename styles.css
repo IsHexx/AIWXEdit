@@ -11,6 +11,9 @@
     background: var(--background-primary);
     padding: 0;
     box-sizing: border-box;
+    min-height: 0;
+    container-type: inline-size;
+    container-name: aiwxedit-preview;
 }
 
 /* Some themes/snippets override view padding; enforce inside leaf content */
@@ -22,18 +25,12 @@
 .wdwxedit-topbar {
     width: 100%;
     box-sizing: border-box;
-    margin: 10px 0;
-    padding: 5px 0;
-    border: 1px solid var(--background-modifier-border);
-    border-color: color-mix(in srgb, var(--background-modifier-border) 45%, transparent);
-    border-right-width: 2px;
-    border-bottom-width: 2px;
-    border-radius: 14px;
+    margin: 0;
+    padding: 0;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--background-modifier-border);
     background: var(--background-primary);
-    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
-    overflow: hidden;
     color: var(--text-normal);
-    font-weight: 600;
 }
 
 /* Toolbar */
@@ -48,7 +45,7 @@
 }
 
 .workspace-leaf-content .wdwxedit-topbar {
-    padding: 5px 0 !important;
+    padding: 0 !important;
 }
 
 .workspace-leaf-content .wdwxedit-topbar .wdwxedit-toolbar {
@@ -235,9 +232,10 @@
 /* Preview Area */
 .wdwxedit-preview {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
-    padding: 24px clamp(16px, 3vw, 32px);
-    background: #e9ecef;
+    padding: 16px;
+    background: var(--background-secondary);
 }
 
 .wdwxedit-empty-state {
@@ -918,5 +916,42 @@
     .wdwxedit-publish-footer { padding: 12px 18px; }
     .wdwxedit-publish-footer > span { flex-basis: 100%; }
     .wdwxedit-publish-feedback { margin: 0 18px 18px; }
-    .wdwxedit-preview { padding: 18px 16px; }
+    .wdwxedit-preview { padding: 16px; }
+}
+
+/* Reading workbench. The article itself lives in a shadow root and keeps its export styles. */
+.wdwxedit-preview-toolbar { display: flex; align-items: center; gap: 8px; padding: 7px 10px; min-height: 42px; box-sizing: border-box; }
+.wdwxedit-preview-actions { display: flex; gap: 3px; align-items: center; flex: 0 0 auto; margin-left: auto; }
+.wdwxedit-preview-toolbar button { height: 30px; border: 0; border-radius: 5px; box-shadow: none; background: transparent; color: var(--text-normal); cursor: pointer; }
+.wdwxedit-preview-toolbar button:hover { background: var(--background-modifier-hover); }
+.wdwxedit-preview-toolbar button:focus-visible, .wdwxedit-reveal-toolbar:focus-visible { outline: 2px solid var(--interactive-accent); outline-offset: 2px; }
+.wdwxedit-preview-toolbar button:disabled { opacity: .45; cursor: default; }
+.wdwxedit-preview-theme { display: flex; align-items: center; gap: 7px; padding: 0 7px; min-width: 0; flex: 0 1 190px; font-size: 13px; }
+.wdwxedit-preview-theme-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: left; flex: 1; }
+.wdwxedit-preview-toolbar svg { display: block; width: 15px; height: 15px; flex-shrink: 0; }
+.wdwxedit-preview-action { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 8px; font-size: 12px; }
+.wdwxedit-preview-action[aria-expanded="true"] { background: var(--background-modifier-hover); }
+.wdwxedit-preview-toolbar .wdwxedit-preview-publish { background: var(--text-normal); color: var(--background-primary); }
+.wdwxedit-preview-toolbar .wdwxedit-preview-publish:hover { opacity: .85; background: var(--text-normal); }
+.wdwxedit-preview-paper { width: 100%; max-width: 390px; box-sizing: border-box; margin: 0 auto; padding: 24px 16px 28px; border-radius: 7px; background: var(--aiwxedit-paper-background, #fff); color: #222; overflow: hidden; box-shadow: 0 0 0 1px color-mix(in srgb, var(--text-normal) 9%, transparent), 0 3px 14px rgba(0,0,0,.04); }
+.wdwxedit-preview-status { max-width: 390px; margin: 14px auto 2px; color: var(--text-muted); font-size: 11px; line-height: 1.7; text-align: center; }
+.wdwxedit-publish-view[data-preview-width="desktop"] .wdwxedit-preview-paper,
+.wdwxedit-publish-view[data-preview-width="desktop"] .wdwxedit-preview-status { max-width: 768px; }
+.wdwxedit-publish-view[data-preview-width="fluid"] .wdwxedit-preview-paper,
+.wdwxedit-publish-view[data-preview-width="fluid"] .wdwxedit-preview-status { max-width: none; }
+.wdwxedit-reveal-toolbar { display: none; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 28px; flex-shrink: 0; border: 0; border-radius: 0; color: var(--text-muted); background: var(--background-primary); font-size: 11px; box-shadow: none; }
+.wdwxedit-reveal-toolbar svg { height: 13px; width: 13px; }
+.is-focus-reading .wdwxedit-topbar { display: none; }
+.is-focus-reading .wdwxedit-reveal-toolbar { display: flex; }
+.wdwxedit-publish-view .wdwxedit-style-editor-container[hidden] { display: none; }
+.wdwxedit-publish-view .style-editor-row { flex-wrap: wrap; overflow: visible; gap: 10px 14px; }
+.wdwxedit-publish-view .style-dropdown-group { flex: 1 1 130px; min-width: 0; }
+.wdwxedit-publish-view .style-dropdown-group .style-dropdown { min-width: 0; width: 100%; }
+@container aiwxedit-preview (max-width: 420px) {
+    .wdwxedit-action-label { display: none; }
+    .wdwxedit-preview-actions { gap: 1px; }
+    .wdwxedit-preview-action { padding: 0 7px; }
+    .wdwxedit-preview-theme { flex-basis: 140px; }
+    .wdwxedit-preview-toolbar { gap: 4px; padding: 7px 8px; }
+    .wdwxedit-preview { padding: 10px; }
 }

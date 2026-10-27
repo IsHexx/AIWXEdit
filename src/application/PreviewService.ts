@@ -83,7 +83,7 @@ export class PreviewService {
     /**
      * Set file to preview
      */
-    async setFile(file: TFile | null): Promise<void> {
+    async setFile(file: TFile | null, contentOverride?: string): Promise<void> {
         const generation = ++this.renderGeneration;
         if (!file) {
             this.updateState({ file: null, article: null, isLoading: false });
@@ -93,7 +93,7 @@ export class PreviewService {
         this.updateState({ file, article: null, isLoading: true });
 
         try {
-            const article = await this.transformer?.transformFile(file);
+            const article = await this.transformer?.transformFile(file, contentOverride);
             if (generation !== this.renderGeneration) return;
             this.updateState({ article: article || null, isLoading: false });
         } catch (error) {
@@ -163,6 +163,29 @@ export class PreviewService {
      */
     getRawHTML(): string {
         return this.state.article?.htmlContent || '';
+    }
+
+    /** Save a standalone article without uploading images or contacting WeChat. */
+    async exportHTML(): Promise<string> {
+        const file = this.state.file;
+        const article = this.state.article;
+        if (!this.app || !file || !article) throw new Error('请先打开一篇笔记');
+        const html = await this.inlineLocalImagesForClipboard(article.styledHtmlContent, file, true);
+        const container = createDiv();
+        replaceChildrenWithHtml(container, html);
+        container.querySelectorAll('[data-vault-path]').forEach(el => el.removeAttribute('data-vault-path'));
+        const escape = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        const title = escape(article.metadata.title || file.basename);
+        const documentHtml = `<!doctype html>\n<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${title}</title></head><body style="margin:0;padding:0;background:#fff"><main style="max-width:768px;margin:0 auto">${container.innerHTML}</main></body></html>`;
+        const folder = 'AIWXEdit Exports';
+        if (!this.app.vault.getAbstractFileByPath(folder)) await this.app.vault.createFolder(folder);
+        const name = `AIWXEdit-${file.basename.replace(/[\\/:*?"<>|]/g, '-').slice(0, 80)}`;
+        const stem = `${folder}/${name}-${Date.now()}`;
+        let path = `${stem}.html`;
+        let suffix = 1;
+        while (this.app.vault.getAbstractFileByPath(path)) path = `${stem}-${suffix++}.html`;
+        await this.app.vault.create(path, documentHtml);
+        return path;
     }
 
     /**
@@ -553,8 +576,8 @@ export class PreviewService {
         });
     }
 
-    private async inlineLocalImagesForClipboard(html: string): Promise<string> {
-        if (!this.app || !this.state.file) return html;
+    private async inlineLocalImagesForClipboard(html: string, sourceFile: TFile | null = this.state.file, strict = false): Promise<string> {
+        if (!this.app || !sourceFile) return html;
 
         const doc = document.implementation.createHTMLDocument('wdwxedit-inline-images');
         const container = doc.createElement('div');
@@ -566,14 +589,16 @@ export class PreviewService {
             const src = img.getAttribute('src') || '';
             const vaultPathAttr = img.getAttribute('data-vault-path') || '';
             if (!src) continue;
+            if (strict && src.startsWith('blob:')) throw new Error('导出包含临时图片地址，请先将图片保存为库内附件');
             if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('data:') || src.startsWith('blob:')) {
                 continue;
             }
 
             const candidate = vaultPathAttr || src;
-            const resolved = this.resolvePath(candidate, this.state.file);
+            const resolved = this.resolvePath(candidate, sourceFile);
             const imageFile = this.app.vault.getAbstractFileByPath(resolved);
             if (!imageFile || !(imageFile instanceof TFile)) {
+                if (strict) throw new Error(`找不到导出图片：${candidate}`);
                 continue;
             }
 
@@ -583,6 +608,7 @@ export class PreviewService {
                 const base64 = this.arrayBufferToBase64(buffer);
                 img.setAttribute('src', `data:${mime};base64,${base64}`);
             } catch {
+                if (strict) throw new Error(`无法读取导出图片：${candidate}`);
                 // Ignore image conversion errors and keep original src.
             }
         }
@@ -677,6 +703,7 @@ export class PreviewService {
             'png': 'image/png',
             'gif': 'image/gif',
             'webp': 'image/webp',
+            'svg': 'image/svg+xml',
         };
         return mimeTypes[ext || ''] || 'image/png';
     }

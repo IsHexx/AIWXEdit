@@ -9,6 +9,8 @@ Format Markdown notes for WeChat Official Accounts (微信公众号), preview th
 ## Features
 
 - **Markdown rendering** — headings, lists, tables, blockquotes, callouts, images, and code highlighting with optional line numbers.
+- **Reading preview** — centered paper with phone (390px), desktop (768px), and fluid widths; searchable themes, collapsible typography controls, focus mode, two-way scroll sync, and word/reading-time statistics. Preview styling is isolated from Obsidian themes.
+- **HTML export** — save a standalone article in `AIWXEdit Exports` inside your vault, embedding local images without a WeChat upload. Remote image URLs still require a network connection; missing local images stop the export with an error.
 - **Theme system** — built-in article themes plus theme color, font family, and font size controls; a built-in theme market for article themes and 70+ code highlight styles with batch download and uninstall; custom CSS support.
 - **WeChat publishing** — a responsive draft composer with author/summary prefill, covers, original-page links, comment permissions, account defaults, and explicit selection of an existing draft article to update.
 - **Local image upload** — when an account is configured, copying or publishing uploads local article images to WeChat so they display correctly in the editor.
@@ -82,6 +84,8 @@ npm run dev
 
 ## License and attribution
 
+The reading workbench takes interaction-design inspiration from [Qiaomu Publish](https://github.com/joeseesun/qiaomu-publish). See [preview behavior and verification](docs/PREVIEW.md) for the implementation scope and test workflow.
+
 MIT; see [LICENSE](LICENSE). Code block rendering and WeChat HTML compatibility include code derived from [sunbooshi/note-to-mp](https://github.com/sunbooshi/note-to-mp), copyright 2024 sunbooshi, under MIT. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [LICENSES](LICENSES/) for all notices and license texts.
 
 ---
@@ -97,6 +101,8 @@ MIT; see [LICENSE](LICENSE). Code block rendering and WeChat HTML compatibility 
 ## 功能特性
 
 - **Markdown 渲染** —— 支持标题、列表、表格、引用、Callout、图片，以及可开关行号的代码高亮。
+- **纸面阅读预览** —— 手机 390px、桌面 768px 与适应面板三种宽度；支持主题搜索、展开排版设置、专注阅读、双向同步滚动、字数与阅读时长。文章样式独立于 Obsidian 外观。
+- **HTML 导出** —— 保存到库内 `AIWXEdit Exports`，内嵌本地图片，无需上传微信；远程图片仍需联网，找不到本地图片时会提示并停止导出。
 - **主题系统** —— 内置多套文章主题，支持主题色、字体、字号调节；内置主题市场，提供文章主题与 70+ 代码高亮样式的批量下载与卸载；支持自定义 CSS。
 - **公众号发布** —— 自适应草稿弹窗，支持作者与摘要预填、封面、阅读原文链接、留言权限、账号默认偏好，以及选择具体草稿文章进行更新。
 - **本地图片上传** —— 配置公众号后，复制或发布会自动把文中本地图片上传到微信素材库，保证编辑器内正常显示。

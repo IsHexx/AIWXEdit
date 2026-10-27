@@ -88,13 +88,13 @@ export class ArticleTransformer {
     /**
      * Transform a markdown file to parsed article
      */
-    async transformFile(file: TFile): Promise<ParsedArticle> {
+    async transformFile(file: TFile, contentOverride?: string): Promise<ParsedArticle> {
         if (!this.app) {
             throw new Error('ArticleTransformer not initialized');
         }
 
         // Read file content
-        const rawContent = await this.app.vault.read(file);
+        const rawContent = contentOverride ?? await this.app.vault.read(file);
 
         // Extract metadata
         const metadata = this.extractMetadata(file, rawContent);

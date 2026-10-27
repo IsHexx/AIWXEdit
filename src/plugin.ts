@@ -195,6 +195,10 @@ export default class AIWXEditPlugin extends Plugin {
 
         if (leaf) {
             await workspace.revealLeaf(leaf);
+            const file = workspace.getActiveFile();
+            if (leaf.view instanceof PublishView && file?.extension === 'md') {
+                await leaf.view.previewFile(file);
+            }
         }
     }
 

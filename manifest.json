@@ -1,7 +1,7 @@
 {
     "id": "aiwxedit",
     "name": "AIWXEdit",
-    "version": "1.0.10",
+    "version": "1.0.11",
     "minAppVersion": "1.7.2",
     "description": "Format Markdown notes and send them to WeChat Official Account drafts, with code highlighting, themes, image uploads, and optional AI tools.",
     "author": "IsHexx",
